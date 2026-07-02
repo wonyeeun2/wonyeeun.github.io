@@ -465,13 +465,12 @@
   <section class="panel" id="panel6">
     <div class="card">
       <h2>통계 · 성별 비교</h2>
-      <p class="hint">이 도구를 사용한 모든 사용자의 기록이 함께 집계됩니다.</p>
+      <p class="hint">기록은 평균·표준편차 등 익명 통계로만 집계되며, 개별 기록은 본인 것만 표시됩니다.</p>
       <div class="btn-row">
         <button class="btn btn-ghost" id="refreshStatsBtn">통계 새로고침</button>
       </div>
       <div class="loader" id="statsLoader"><div class="spin"></div>불러오는 중...</div>
       <div class="status-msg" id="storageDiagMsg"></div>
-      <p class="privacy-note">* 통계는 공유 저장소에 기록되어 이 도구를 사용하는 모든 사용자에게 공개됩니다.</p>
     </div>
 
     <div class="card"><h2>♀ 여성 기록</h2><div class="stat-tiles" id="femaleTiles"></div><div id="femaleTableWrap"></div></div>
@@ -1407,8 +1406,12 @@
     loader.classList.remove('show');
     let list = [];
     if(rawList){ try{ list = JSON.parse(rawList); }catch(e){} }
+    /* 공용 기기 대비: 현재 [정보입력]에 저장된 이름과 같은 기록만 사용 */
+    let curName = _logName;
+    if(!curName){ try{ const p = JSON.parse(await sGet('profile:current', false) || 'null'); if(p) curName = p.name; }catch(e){} }
+    if(curName) list = list.filter(r=>r.name===curName);
     if(!list.length){
-      box.innerHTML = '<div class="empty-state">저장된 개인 기록이 없습니다. [기록·등급] 탭에서 먼저 저장해주세요.</div>';
+      box.innerHTML = '<div class="empty-state">현재 이름으로 저장된 개인 기록이 없습니다. [01 정보입력]에서 본인 이름 저장 후 [03 기록·등급] 탭에서 기록을 저장해주세요.</div>';
       window._latestRecord = null;
       return;
     }
@@ -1581,6 +1584,7 @@
     try{ profile = JSON.parse(await sGet('profile:current', false) || 'null'); }catch(e){}
     try{ body = JSON.parse(await sGet('profile:body', false) || 'null'); }catch(e){}
     try{ records = JSON.parse(await sGet('my-records', false) || '[]'); }catch(e){}
+    if(profile && profile.name){ records = records.filter(r=>r.name===profile.name); }
     try{ lpA = JSON.parse(await sGet('analysis:legpress', false) || 'null'); }catch(e){}
     try{ sqA = JSON.parse(await sGet('analysis:squat', false) || 'null'); }catch(e){}
     loader.classList.remove('show');
@@ -1701,7 +1705,7 @@
     textEl.style.display = 'block';
     textEl.innerHTML = `현재 ${records.length}건의 공유 기록 기준, 레그프레스 표준편차는 <b>±${lpStd.toFixed(1)}kg</b>, 스쿼트 표준편차는 <b>±${sqStd.toFixed(1)}kg</b>로 두 종목의 편차 차이는 약 <b>${diff.toFixed(1)}kg</b>입니다. 레그프레스는 궤적이 고정되어 초보자도 고중량을 다룰 수 있어 사람마다 기록차(표준편차)가 더 크게 나타나는 경향이 있습니다.`;
   }
-  function renderGenderStats(records, tilesElId, tableWrapId){
+  function renderGenderStats(records, tilesElId, tableWrapId, myName){
     const tilesEl = document.getElementById(tilesElId);
     const tableWrapEl = document.getElementById(tableWrapId);
     if(!records.length){ tilesEl.innerHTML=''; tableWrapEl.innerHTML = '<div class="empty-state">아직 저장된 기록이 없습니다.</div>'; return; }
@@ -1714,9 +1718,16 @@
       <div class="stat-tile"><div class="k">레그프레스 표준편차</div><div class="v accent">±${lpStd.toFixed(1)}kg</div></div>
       <div class="stat-tile"><div class="k">스쿼트 표준편차</div><div class="v blue">±${sqStd.toFixed(1)}kg</div></div>
       <div class="stat-tile"><div class="k">평균 배율(LP÷SQ)</div><div class="v">${(lpMean/sqMean).toFixed(2)}×</div></div>`;
-    const sorted = [...records].sort((a,b)=>b.savedAt-a.savedAt).slice(0,15);
-    const rows = sorted.map(r=>`<tr><td class="nm">${escapeHtml(r.name)}</td><td>${r.age}세</td><td>${r.legpress}kg</td><td>${r.squat}kg</td></tr>`).join('');
-    tableWrapEl.innerHTML = `<table class="rec-table"><thead><tr><th>이름</th><th>나이</th><th>레그프레스</th><th>스쿼트</th></tr></thead><tbody>${rows}</tbody></table>`;
+    /* 개인정보 보호: 다른 학생의 이름·기록은 표시하지 않고, 본인 기록만 표로 보여줌.
+       전체 개별 기록은 관리자(제작자)의 구글 시트에서만 확인 가능. */
+    const mine = myName ? [...records].filter(r=>r.name===myName).sort((a,b)=>b.savedAt-a.savedAt).slice(0,15) : [];
+    if(mine.length){
+      const rows = mine.map(r=>`<tr><td class="nm">${escapeHtml(r.name)}</td><td>${r.age}세</td><td>${r.legpress}kg</td><td>${r.squat}kg</td></tr>`).join('');
+      tableWrapEl.innerHTML = `<div class="grade-label" style="margin:8px 0 4px">📌 내 기록 (다른 학생의 개별 기록은 개인정보 보호를 위해 표시되지 않습니다)</div>
+        <table class="rec-table"><thead><tr><th>이름</th><th>나이</th><th>레그프레스</th><th>스쿼트</th></tr></thead><tbody>${rows}</tbody></table>`;
+    } else {
+      tableWrapEl.innerHTML = `<div class="empty-state">개별 기록은 개인정보 보호를 위해 본인 것만 표시됩니다.<br>내 기록이 없다면 [01 정보입력]에서 이름 저장 후 [03 기록·등급]에서 기록을 저장해주세요.</div>`;
+    }
   }
   async function loadStats(){
     const loader = document.getElementById('statsLoader');
@@ -1726,9 +1737,13 @@
     const keys = await sList('record2:', true);
     const records = [];
     for(const k of keys){ const raw = await sGet(k, true); if(raw){ try{ records.push(JSON.parse(raw)); }catch(e){} } }
+    let myName = _logName;
+    if(!myName){
+      try{ const p = JSON.parse(await sGet('profile:current', false) || 'null'); if(p) myName = p.name; }catch(e){}
+    }
     loader.classList.remove('show');
-    renderGenderStats(records.filter(r=>r.gender==='여'), 'femaleTiles', 'femaleTableWrap');
-    renderGenderStats(records.filter(r=>r.gender!=='여'), 'maleTiles', 'maleTableWrap');
+    renderGenderStats(records.filter(r=>r.gender==='여'), 'femaleTiles', 'femaleTableWrap', myName);
+    renderGenderStats(records.filter(r=>r.gender!=='여'), 'maleTiles', 'maleTableWrap', myName);
 
     if(!diag.ok){
       diagEl.textContent = '⚠ 저장소 연결에 문제가 있습니다. 이 아티팩트가 아직 "게시(Publish)"되지 않았다면 저장이 되지 않는 것이 정상입니다 — 먼저 게시한 뒤 그 링크에서 다시 기록해주세요.';
