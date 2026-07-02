@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>레그프레스 · 스쿼트 1RM 평가 시스템</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFAF8; --surface:#FFFFFF; --surface-2:#F5F5F1; --surface-3:#ECECE6;
+    --border:#E3E2DA; --text:#201F1B; --text-dim:#5C5A52; --text-faint:#8B8A7F;
+    --accent:#FF5A36; --accent-gold:#B8860B; --accent-blue:#1D74B5; --accent-green:#1E9A5C;
+    --danger:#D6392F; --radius:14px;
+    --plate-red:#E4423A; --plate-yellow:#F2C94C; --plate-green:#2FBE7A; --plate-gray:#8b8a95;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+  .app{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
+
+  header.top{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;padding-bottom:22px;border-bottom:1px solid var(--border);}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;font-weight:600;}
+  h1.title{font-family:'Oswald',sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(26px,5vw,38px);letter-spacing:.01em;margin:2px 0 0;line-height:1.05;}
+  h1.title span{color:var(--accent);}
+  .subtitle{color:var(--text-dim);font-size:14px;margin-top:6px;}
+
+  .storage-banner{font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text-faint);
+    background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:18px;line-height:1.6;}
+  .storage-banner b{color:var(--accent-blue);}
+
+  nav.tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:26px;border-bottom:1px solid var(--border);scrollbar-width:none;}
+  nav.tabs::-webkit-scrollbar{display:none;}
+  .tab-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
+    padding:12px 14px 14px;white-space:nowrap;display:flex;align-items:baseline;gap:8px;border-bottom:2px solid transparent;transition:color .15s, border-color .15s;}
+  .tab-btn .num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-faint);}
+  .tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
+  .tab-btn.active .num{color:var(--accent);}
+  .tab-btn:hover:not(.active){color:var(--text-dim);}
+
+  section.panel{display:none;animation:fade .25s ease;}
+  section.panel.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;margin-bottom:16px;}
+  .card h2{font-family:'Oswald',sans-serif;font-weight:600;text-transform:uppercase;font-size:15px;letter-spacing:.03em;margin:0 0 4px;color:var(--text);}
+  .card h3.sub-heading{font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;color:var(--text-dim);margin:16px 0 8px;text-transform:none;letter-spacing:0;}
+  .card .hint{color:var(--text-dim);font-size:12.5px;margin:0 0 16px;line-height:1.5;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+  label{display:block;font-size:12px;color:var(--text-dim);margin-bottom:6px;font-weight:600;}
+  input[type=text],input[type=number],select{width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);
+    border-radius:8px;padding:10px 12px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;}
+  input:focus,select:focus{border-color:var(--accent);}
+  .field{margin-bottom:14px;}
+  .radio-row{display:flex;gap:8px;}
+  .radio-opt{flex:1;text-align:center;padding:10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;
+    color:var(--text-dim);background:var(--surface-2);transition:all .15s;}
+  .radio-opt.sel{border-color:var(--accent);color:var(--text);background:rgba(255,90,54,.12);}
+
+  button.btn{font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:8px;padding:11px 16px;cursor:pointer;
+    transition:filter .15s, transform .1s, opacity .15s;}
+  button.btn:active{transform:scale(.98);}
+  button.btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-primary{background:var(--accent);color:#1a0f0a;}
+  .btn-primary:hover:not(:disabled){filter:brightness(1.08);}
+  .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--text-faint);}
+  .btn-blue{background:var(--accent-blue);color:#fff;}
+  .btn-danger{background:rgba(228,84,74,.15);color:var(--danger);border:1px solid var(--danger);}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .status-msg{font-size:12.5px;margin-top:10px;padding:9px 12px;border-radius:8px;display:none;}
+  .status-msg.show{display:block;}
+  .status-ok{background:rgba(47,190,122,.13);color:var(--accent-green);}
+  .status-err{background:rgba(228,84,74,.13);color:var(--danger);}
+
+  .upload-box{border:1.5px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s;background:var(--surface-2);}
+  .upload-box:hover{border-color:var(--accent);}
+  .upload-box .ic{font-size:24px;margin-bottom:4px;}
+  .upload-box .lbl{font-size:12.5px;color:var(--text-dim);}
+  .upload-box .fname{font-size:12px;color:var(--accent);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+
+  .mode-toggle{display:flex;gap:6px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;}
+  .mode-toggle button{flex:1;background:none;border:none;color:var(--text-faint);padding:8px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
+  .mode-toggle button.on{background:var(--surface-3);color:var(--text);}
+
+  .cam-wrap{position:relative;width:100%;background:#000;border-radius:10px;overflow:hidden;display:none;}
+  .cam-wrap.show{display:block;}
+  .cam-wrap video{width:100%;display:block;max-height:340px;object-fit:contain;background:#000;}
+  .cam-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;}
+  .marker-hint{position:absolute;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,.72);color:var(--accent-gold);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px 10px;border-radius:7px;display:none;line-height:1.5;}
+  .marker-hint.show{display:block;}
+  .rec-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:5px;animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+
+  .checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;}
+  .checklist li{font-size:12.5px;color:var(--text-dim);display:flex;gap:8px;align-items:flex-start;padding:9px 10px;
+    background:var(--surface-2);border-radius:8px;border:1px solid var(--border);}
+  .checklist li b{color:var(--text);}
+
+  .phase-result{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px;}
+  @media(max-width:640px){.phase-result{grid-template-columns:1fr 1fr;}}
+  .angle-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px;}
+  .angle-tile .k{font-size:10.5px;color:var(--text-faint);font-weight:600;}
+  .angle-tile .v{font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;margin-top:2px;}
+
+  .verdict-pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;padding:8px 14px;border-radius:20px;margin-top:14px;}
+  .verdict-ok{background:rgba(47,190,122,.15);color:var(--accent-green);}
+  .verdict-bad{background:rgba(228,84,74,.15);color:var(--danger);}
+  .reason-list{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:6px;}
+  .reason-list li{font-size:12px;color:var(--text-dim);padding-left:16px;position:relative;line-height:1.5;}
+  .reason-list li::before{content:'—';position:absolute;left:0;color:var(--danger);}
+
+  .grade-badge{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
+    font-family:'Oswald',sans-serif;font-weight:700;font-size:14px;flex-shrink:0;}
+  .g1{background:var(--accent-gold);color:#2a1c00;}
+  .g2{background:var(--accent-blue);color:#fff;}
+  .g3{background:var(--accent-green);color:#fff;}
+  .g4{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border);}
+  .g5{background:rgba(228,84,74,.18);color:var(--danger);border:1px solid var(--danger);}
+  .row-g1{background:rgba(255,201,60,.10);}
+  .row-g2{background:rgba(79,169,232,.10);}
+  .row-g3{background:rgba(47,190,122,.10);}
+  .row-g4{background:rgba(0,0,0,.02);}
+  .row-g5{background:rgba(228,84,74,.10);}
+  .row-hit{outline:1.5px solid var(--accent);outline-offset:-1px;}
+
+  table.thresh-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
+  table.thresh-table th{text-align:left;color:var(--text-faint);font-weight:600;font-size:10.5px;text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--border);}
+  table.thresh-table td{padding:8px 9px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  table.thresh-table td.g-name{color:var(--text);font-family:'Inter',sans-serif;font-weight:700;}
+
+  .table-scroll{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;margin-top:8px;}
+  table.std-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+  table.std-table th{position:sticky;top:0;background:var(--surface-2);text-align:center;color:var(--text-faint);font-weight:700;font-size:10px;text-transform:uppercase;padding:7px 6px;border-bottom:1px solid var(--border);}
+  table.std-table td{padding:6px;text-align:center;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;border-bottom:1px solid var(--border);}
+  table.std-table td.bw{color:var(--text);font-family:'Inter',sans-serif;font-weight:700;background:var(--surface-2);}
+  table.std-table tr.row-hit td.bw{color:var(--accent);}
+  table.std-table td.cell-hit{background:rgba(255,90,54,.14);color:var(--accent);font-weight:700;border-radius:6px;}
+
+  .legend-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 12px;background:var(--surface-2);border-radius:9px;border:1px solid var(--border);}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-dim);}
+  .legend-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+
+  .result-row{display:flex;align-items:center;gap:14px;padding:14px;background:var(--surface-2);border-radius:10px;margin-top:10px;}
+  .result-row .info{flex:1;}
+  .result-row .lift-name{font-size:12.5px;color:var(--text-dim);font-weight:600;}
+  .result-row .weight{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;}
+  .result-row .grade-label{font-size:11.5px;color:var(--text-faint);margin-top:2px;}
+
+  .plate-wrap{background:var(--surface-2);border-radius:10px;padding:12px 8px;margin-top:10px;display:flex;justify-content:center;overflow-x:auto;}
+
+  .muscle-row{display:flex;gap:20px;justify-content:center;margin:12px 0 16px;flex-wrap:wrap;}
+  .muscle-col{text-align:center;}
+  .muscle-col .cap{font-size:11px;color:var(--text-faint);margin-top:4px;font-family:'IBM Plex Mono',monospace;}
+
+  .compare-item{padding:16px;background:var(--surface-2);border-radius:10px;margin-bottom:10px;}
+  .compare-item h3{margin:0 0 4px;font-size:14px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+  .compare-item p{margin:0 0 8px;font-size:12.5px;color:var(--text-dim);line-height:1.6;}
+  .region-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+  .tag{font-size:11px;font-family:'IBM Plex Mono',monospace;padding:3px 8px;border-radius:5px;background:var(--surface);border:1px solid var(--border);color:var(--text-dim);}
+
+  .formula-box{background:var(--surface-2);border-radius:9px;padding:12px 14px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent-gold);margin-top:10px;text-align:center;}
+  .ratio-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  @media(max-width:640px){.ratio-grid{grid-template-columns:1fr 1fr;}}
+  .ratio-cell{background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:12px;text-align:center;}
+  .ratio-cell .k{font-size:10.5px;color:var(--text-faint);font-weight:600;}
+  .ratio-cell .v{font-family:'Oswald',sans-serif;font-size:20px;font-weight:600;margin-top:4px;}
+
+  .analysis-box{background:var(--surface-2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 16px;margin-top:12px;font-size:13px;color:var(--text-dim);line-height:1.7;}
+  .analysis-box b{color:var(--text);}
+  .analysis-box.warn{border-left-color:var(--danger);}
+
+  .rx-card{display:flex;gap:12px;padding:14px;background:var(--surface-2);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);}
+  .rx-card .ic{font-size:20px;}
+  .rx-card h4{margin:0 0 3px;font-size:13px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+  .rx-card p{margin:0;font-size:12px;color:var(--text-dim);line-height:1.55;}
+
+  .stat-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  @media(max-width:640px){.stat-tiles{grid-template-columns:1fr 1fr;}}
+  .stat-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .stat-tile .k{font-size:11px;color:var(--text-dim);font-weight:600;margin-bottom:6px;}
+  .stat-tile .v{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600;}
+  .stat-tile .v.accent{color:var(--accent);}
+  .stat-tile .v.blue{color:var(--accent-blue);}
+
+  table.rec-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px;}
+  table.rec-table th{text-align:left;color:var(--text-faint);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--border);}
+  table.rec-table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  table.rec-table tr:last-child td{border-bottom:none;}
+  table.rec-table td.nm{color:var(--text);font-family:'Inter',sans-serif;font-weight:600;}
+
+  .empty-state{color:var(--text-faint);font-size:13px;padding:24px 10px;text-align:center;border:1px dashed var(--border);border-radius:10px;}
+  .divider{height:1px;background:var(--border);margin:18px 0;}
+  .loader{display:none;align-items:center;gap:8px;color:var(--text-faint);font-size:12px;margin-top:10px;font-family:'IBM Plex Mono',monospace;}
+  .loader.show{display:flex;}
+  .spin{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;}
+  @keyframes sp{to{transform:rotate(360deg);}}
+  .reset-link{color:var(--text-faint);font-size:11.5px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:'Inter',sans-serif;padding:0;margin-top:14px;margin-right:18px;}
+  .reset-link:hover{color:var(--danger);}
+  .privacy-note{font-size:11px;color:var(--text-faint);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+
+  /* ---- pose analyzer (v2) ---- */
+  .cam-wrap video{max-height:420px;}
+  .live-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  @media(max-width:640px){.live-tiles{grid-template-columns:1fr 1fr;}}
+  .fb-box{margin-top:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+  .fb-box h4{margin:0 0 8px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;}
+  .fb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .fb-list li{font-size:12px;line-height:1.5;padding-left:16px;position:relative;color:var(--text-dim);}
+  .fb-list li.warn{color:var(--danger);}
+  .fb-list li.ok{color:var(--accent-green);}
+  .fb-list li::before{content:'—';position:absolute;left:0;}
+  .pose-badge{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    padding:5px 10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);margin-top:10px;}
+  .pose-badge.on{color:var(--accent-green);border-color:var(--accent-green);}
+
+  /* ---- tab3 grade banner ---- */
+  .grade-banner{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;margin:10px 0;}
+  .grade-banner .gb-badge{display:inline-flex;align-items:center;justify-content:center;min-width:64px;height:34px;border-radius:8px;
+    font-family:'Oswald',sans-serif;font-weight:700;font-size:15px;padding:0 10px;}
+  .grade-banner .gb-text{font-size:12.5px;color:var(--text-dim);line-height:1.45;}
+  .grade-banner .gb-text b{color:var(--text);}
+  .plate-title{font-size:12px;font-weight:700;color:var(--text-dim);margin:16px 0 0;display:flex;align-items:center;gap:8px;}
+  .plate-title .pt-grade{font-family:'Oswald',sans-serif;color:var(--accent);}
+
+  /* ---- tab4 training plan ---- */
+  table.plan-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+  table.plan-table th{text-align:left;color:var(--text-faint);font-weight:600;font-size:10.5px;text-transform:uppercase;padding:7px 9px;border-bottom:1px solid var(--border);}
+  table.plan-table td{padding:8px 9px;color:var(--text-dim);border-bottom:1px solid var(--border);}
+  table.plan-table td:first-child{color:var(--text);font-weight:700;}
+  table.plan-table tr:last-child td{border-bottom:none;}
+
+  /* ---- tab5 summary ---- */
+  .sum-sec{padding:14px 16px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;}
+  .sum-sec h3{margin:0 0 8px;font-size:13px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;display:flex;gap:8px;align-items:baseline;}
+  .sum-sec h3 .num{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--accent);}
+  .sum-sec p{margin:0;font-size:12.5px;color:var(--text-dim);line-height:1.65;}
+  .sum-sec p b{color:var(--text);}
+  .sum-kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+  @media(max-width:640px){.sum-kv{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <span class="eyebrow">Strength Assessment · Leg Press vs Squat</span>
+    <h1 class="title">1RM <span>비교분석</span> 시스템</h1>
+    <p class="subtitle">레그프레스·스쿼트 1RM 기록 · AI 자세분석 · 등급 확인 · 종합 결과 · 성별 통계</p>
+  </header>
+
+  <nav class="tabs" id="tabNav">
+    <button class="tab-btn active" data-tab="1"><span class="num">01</span>정보입력</button>
+    <button class="tab-btn" data-tab="2"><span class="num">02</span>자세분석</button>
+    <button class="tab-btn" data-tab="3"><span class="num">03</span>기록·등급</button>
+    <button class="tab-btn" data-tab="4"><span class="num">04</span>비교분석</button>
+    <button class="tab-btn" data-tab="5"><span class="num">05</span>종합결과</button>
+    <button class="tab-btn" data-tab="6"><span class="num">06</span>통계</button>
+  </nav>
+
+  <!-- ===================== TAB 1 ===================== -->
+  <section class="panel active" id="panel1">
+    <div class="card">
+      <h2>기본 정보 입력</h2>
+      <p class="hint">이름, 만 나이, 성별을 입력하면 이어지는 탭에서 계속 사용됩니다.</p>
+      <div class="field"><label>이름</label><input type="text" id="inName" placeholder="예) 홍길동"></div>
+      <div class="grid2">
+        <div class="field"><label>만 나이 (세)</label><input type="number" id="inAge" placeholder="예) 22" min="10" max="100"></div>
+        <div class="field"><label>성별</label>
+          <div class="radio-row" id="genderRow">
+            <div class="radio-opt" data-g="남">남성</div>
+            <div class="radio-opt" data-g="여">여성</div>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="saveProfileBtn">정보 저장</button>
+      <div class="loader" id="profileLoader"><div class="spin"></div>저장 중...</div>
+      <div class="status-msg" id="profileStatus"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 2 ===================== -->
+  <section class="panel" id="panel2">
+    <div class="card">
+      <h2>녹화 및 영상 업로드 시 가이드라인</h2>
+      <ul class="checklist">
+        <li>📐 <b>촬영 각도</b> — 측면 45° 방향에서 촬영해주세요.</li>
+        <li>👖 <b>발목 노출</b> — 발목 각도 분석을 위해 바지를 걷어 올려 발목이 잘 보이도록 촬영해주세요.</li>
+        <li>💡 <b>조명·전신</b> — 밝은 곳에서 머리부터 발끝까지 전신이 화면에 들어오게 촬영하면 관절 인식 정확도가 높아집니다.</li>
+      </ul>
+      <p class="hint" style="margin:12px 0 0;">영상을 녹화하거나 업로드한 뒤 <b>[▶ 시작]</b>을 누르면 AI가 영상 속 인물의 관절 위치를 자동으로 찾아 점과 선(스켈레톤)으로 표시하고, 무릎·고관절 각도와 동작 속도를 프레임 단위로 기록해 자세 가이드라인 대비 피드백을 제공합니다.</p>
+    </div>
+
+    <div class="card" id="analyzer-legpress-card">
+      <h2>레그프레스 자세분석</h2>
+      <p class="hint">카메라로 녹화하거나 영상을 업로드한 뒤 [▶ 시작]을 누르세요. AI 포즈 추정(Pose Estimation)이 관절을 자동 인식하고, 모션 캡처 방식으로 각도·속도를 기록해 기준 범위를 벗어나면 즉시 피드백합니다.</p>
+      <h3 class="sub-heading">자세 가이드</h3>
+      <ul class="checklist">
+        <li><b>발판 위치</b> — 발은 어깨너비, 발판 중앙에 고르게 배치</li>
+        <li><b>무릎 정렬</b> — 밀어낼 때 무릎이 안쪽으로 모이지 않는지 (Valgus 확인)</li>
+        <li><b>가동범위</b> — 무릎 각도 약 90°까지 내려갔다가 완전히 펴지 않고 멈추는지</li>
+        <li><b>동작 속도</b> — 내리는 구간(신장성)은 천천히, 급격히 무너지듯 내려가지 않는지</li>
+      </ul>
+    </div>
+
+    <div class="card" id="analyzer-squat-card">
+      <h2>스쿼트 자세분석</h2>
+      <p class="hint">동일한 방식으로 스쿼트 영상을 분석합니다. 하강 깊이·무릎 정렬·상체 기울기·동작 속도를 자동으로 판정합니다.</p>
+      <h3 class="sub-heading">자세 가이드</h3>
+      <ul class="checklist">
+        <li><b>발 너비</b> — 어깨너비 또는 약간 넓게, 발끝은 살짝 바깥으로</li>
+        <li><b>깊이(Depth)</b> — 대퇴부가 바닥과 평행 이하로 내려가는지</li>
+        <li><b>무릎 정렬</b> — 무릎이 발끝 방향과 일치하는지 (Valgus 확인)</li>
+        <li><b>상체 각도</b> — 무게중심이 앞으로 쏠려 상체가 과도하게 숙여지지 않는지</li>
+        <li><b>동작 속도</b> — 하강은 통제된 속도로, 반동을 쓰지 않는지</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 3 ===================== -->
+  <section class="panel" id="panel3">
+    <div class="card">
+      <h2>1RM 기록 입력</h2>
+      <p class="hint">종목별 1RM(1회 최대 반복 중량)을 kg 단위로 입력하세요. 값을 입력하는 즉시 아래에 해당 등급이 표시되며, [기록 저장]을 누르면 통계·종합결과에 반영됩니다.</p>
+      <div class="grid2">
+        <div class="field"><label>레그프레스 1RM (kg)</label><input type="number" id="inLegpress" placeholder="예) 220" min="0" step="2.5"></div>
+        <div class="field"><label>스쿼트 1RM (kg)</label><input type="number" id="inSquat" placeholder="예) 110" min="0" step="2.5"></div>
+      </div>
+      <div class="field"><label>몸무게 (kg)</label><input type="number" id="inGradeWeight" placeholder="예) 68" min="0" step="0.5"></div>
+      <button class="btn btn-primary" id="checkGradeBtn">기록 저장</button>
+      <div class="loader" id="gradeLoader"><div class="spin"></div>처리 중...</div>
+      <div class="status-msg" id="gradeStatus"></div>
+    </div>
+
+    <div class="card" id="threshCard" style="display:none;">
+      <h2>등급 기준표 (레그프레스 · 스쿼트 각각 별도)</h2>
+      <p class="hint">ACSM 20대 상대 근력 기준(레그프레스)과 스트렝스 스탠다드 체중별 기준(스쿼트)을 반영했습니다. 입력한 기록이 속한 등급이 자동으로 색상 표시됩니다.</p>
+      <div id="lpThreshWrap"></div>
+      <div class="divider"></div>
+      <div id="sqThreshWrap"></div>
+    </div>
+
+    <div class="card" id="gradeResultCard" style="display:none;">
+      <h2>등급 결과 · 무게 적재</h2>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-red);"></span>20kg</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-yellow);"></span>10kg</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-green);"></span>5kg</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-gray);"></span>2.5kg</div>
+      </div>
+
+      <div class="result-row">
+        <div class="grade-badge" id="lpGradeBadge">-</div>
+        <div class="info">
+          <div class="lift-name">레그프레스 1RM</div>
+          <div class="weight" id="lpWeightDisp">- kg</div>
+          <div class="grade-label" id="lpGradeLabel"></div>
+        </div>
+      </div>
+      <p class="plate-title">레그프레스 무게 적재 <span class="pt-grade" id="lpPlateGrade"></span></p>
+      <div class="plate-wrap" id="lpPlateWrap"></div>
+
+      <div class="result-row">
+        <div class="grade-badge" id="sqGradeBadge">-</div>
+        <div class="info">
+          <div class="lift-name">스쿼트 1RM</div>
+          <div class="weight" id="sqWeightDisp">- kg</div>
+          <div class="grade-label" id="sqGradeLabel"></div>
+        </div>
+      </div>
+      <p class="plate-title">스쿼트 무게 적재 <span class="pt-grade" id="sqPlateGrade"></span></p>
+      <div class="plate-wrap" id="sqPlateWrap"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 4 ===================== -->
+  <section class="panel" id="panel4">
+    <div class="card" id="stdevExampleCard">
+      <h2>표준편차 예시 비교</h2>
+      <p class="hint">전체 사용자의 공유 기록을 바탕으로, 레그프레스와 스쿼트 기록이 평균에서 보통 얼마나 흩어져 있는지(표준편차) 보여주는 예시입니다. 표준편차가 클수록 사람마다 기록 편차가 크다는 뜻입니다.</p>
+      <div class="stat-tiles" id="stdevExampleTiles"></div>
+      <div class="loader" id="stdevExampleLoader"><div class="spin"></div>불러오는 중...</div>
+      <div class="analysis-box" id="stdevExampleText" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>종목 특징 및 주 사용 부위</h2>
+      <div class="compare-item">
+        <h3>레그프레스</h3>
+        <p>고정된 좌석과 발판을 따라 움직이는 머신 운동으로, 궤적이 고정되어 균형·코어 안정성 부담이 적고 상대적으로 고중량을 다룰 수 있습니다.</p>
+        <div class="muscle-row" id="lpMuscleMap"></div>
+        <div class="region-tags"><span class="tag">대퇴사두근</span><span class="tag">둔근</span><span class="tag">햄스트링(보조)</span></div>
+      </div>
+      <div class="compare-item">
+        <h3>스쿼트</h3>
+        <p>바벨을 등에 지고 자유 중량으로 수행하는 다관절 복합 운동으로, 척추 기립근과 코어가 지속적으로 자세를 안정시켜야 합니다.</p>
+        <div class="muscle-row" id="sqMuscleMap"></div>
+        <div class="region-tags"><span class="tag">대퇴사두근</span><span class="tag">둔근</span><span class="tag">척추기립근</span><span class="tag">코어</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>개인 기록 불러오기</h2>
+      <p class="hint">탭3에서 저장한 가장 최근 기록을 불러옵니다.</p>
+      <button class="btn btn-ghost" id="loadRecordBtn">최근 기록 불러오기</button>
+      <div class="loader" id="loadRecordLoader"><div class="spin"></div>불러오는 중...</div>
+      <div id="loadedRecordBox" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>개인 신체 정보</h2>
+      <p class="hint">키·몸무게를 입력하면 편차 분석과 운동 처방에 반영됩니다.</p>
+      <div class="grid2">
+        <div class="field"><label>키 (cm)</label><input type="number" id="inHeight" placeholder="예) 172"></div>
+        <div class="field"><label>몸무게 (kg)</label><input type="number" id="inWeight" placeholder="예) 68"></div>
+      </div>
+      <button class="btn btn-primary" id="analyzeDeviationBtn">편차 분석하기</button>
+      <div class="status-msg" id="bodyStatus"></div>
+    </div>
+
+    <div class="card" id="deviationCard" style="display:none;">
+      <h2>개인 기록 편차 분석</h2>
+      <p class="hint">레그프레스는 궤적이 고정되어 안정성 부담 없이 더 높은 절대 중량을 다룰 수 있는 반면, 스쿼트는 균형·코어 안정화 능력이 최대 중량을 제한합니다. 아래 공식과 기준으로 배율을 계산합니다.</p>
+      <div class="formula-box">배율 = 레그프레스 1RM ÷ 스쿼트 1RM</div>
+      <table class="thresh-table">
+        <thead><tr><th>구간</th><th>배율</th><th>해석</th></tr></thead>
+        <tbody>
+          <tr><td class="g-name">낮음</td><td>1.5배 미만</td><td>스쿼트 상대 기록이 높음</td></tr>
+          <tr><td class="g-name">참고범위</td><td>1.5배 ~ 2.0배</td><td>두 종목 간 균형적 발달</td></tr>
+          <tr><td class="g-name">높음</td><td>2.0배 초과</td><td>레그프레스 상대 기록이 높음</td></tr>
+        </tbody>
+      </table>
+      <div class="ratio-grid" id="ratioGrid"></div>
+      <div class="analysis-box" id="deviationText"></div>
+    </div>
+
+    <div class="card" id="rxCard" style="display:none;">
+      <h2>운동 처방</h2>
+      <p class="hint">기록·자세분석 결과를 바탕으로 한 개인 맞춤 운동 처방입니다. FITT 원리(빈도 Frequency · 강도 Intensity · 시간 Time · 형태 Type)에 따라 구성했습니다.</p>
+      <div id="rxLevelPlan"></div>
+      <div id="rxList" style="margin-top:14px;"></div>
+      <div id="rxWeekPlan"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 5 ===================== -->
+  <section class="panel" id="panel5">
+    <div class="card">
+      <h2>종합 결과</h2>
+      <p class="hint">01 정보입력 ~ 04 비교분석까지의 결과를 한 화면에 요약합니다. 각 탭에서 저장한 내용이 자동으로 반영됩니다.</p>
+      <button class="btn btn-ghost" id="refreshSummaryBtn">종합 결과 새로고침</button>
+      <div class="loader" id="summaryLoader"><div class="spin"></div>불러오는 중...</div>
+      <div id="summaryWrap" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 6 ===================== -->
+  <section class="panel" id="panel6">
+    <div class="card">
+      <h2>통계 · 성별 비교</h2>
+      <p class="hint">이 도구를 사용한 모든 사용자의 기록이 함께 집계됩니다.</p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="refreshStatsBtn">통계 새로고침</button>
+      </div>
+      <div class="loader" id="statsLoader"><div class="spin"></div>불러오는 중...</div>
+      <div class="status-msg" id="storageDiagMsg"></div>
+      <p class="privacy-note">* 통계는 공유 저장소에 기록되어 이 도구를 사용하는 모든 사용자에게 공개됩니다.</p>
+    </div>
+
+    <div class="card"><h2>♀ 여성 기록</h2><div class="stat-tiles" id="femaleTiles"></div><div id="femaleTableWrap"></div></div>
+    <div class="card"><h2>♂ 남성 기록</h2><div class="stat-tiles" id="maleTiles"></div><div id="maleTableWrap"></div></div>
+
+    <button class="reset-link" id="resetAllBtn">이 기기의 개인 정보만 초기화</button>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* =================================================================
+     STORAGE ADAPTER — Claude 아티팩트 storage가 있으면 사용, 없으면
+     이 브라우저의 localStorage로 자동 전환됩니다.
+  ================================================================= */
+  const hasCloud = (typeof window.storage !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+  const localFallback = {
+    _k(key, shared){ return (shared ? 'shared__' : 'local__') + key; },
+    async get(key, shared){
+      try{
+        const v = localStorage.getItem(this._k(key, shared));
+        if(v === null) return null;
+        return { key, value: v, shared: !!shared };
+      }catch(e){ return null; }
+    },
+    async set(key, value, shared){
+      try{
+        localStorage.setItem(this._k(key, shared), value);
+        return { key, value, shared: !!shared };
+      }catch(e){ return null; }
+    },
+    async delete(key, shared){
+      try{ localStorage.removeItem(this._k(key, shared)); return { key, deleted:true, shared:!!shared }; }
+      catch(e){ return null; }
+    },
+    async list(prefix, shared){
+      try{
+        const p = this._k(prefix || '', shared);
+        const keys = [];
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(k && k.indexOf(p) === 0) keys.push(k.slice(shared ? 8 : 7));
+        }
+        return { keys, prefix, shared: !!shared };
+      }catch(e){ return { keys: [], prefix, shared: !!shared }; }
+    }
+  };
+  const backend = hasCloud ? window.storage : localFallback;
+
+  async function sGet(key, shared){ try{ const r = await backend.get(key, !!shared); return r ? r.value : null; }catch(e){ return null; } }
+  async function sSet(key, value, shared){ try{ const r = await backend.set(key, value, !!shared); return !!r; }catch(e){ return false; } }
+  async function sList(prefix, shared){ try{ const r = await backend.list(prefix, !!shared); return r ? r.keys : []; }catch(e){ return []; } }
+  async function sDelete(key, shared){ try{ await backend.delete(key, !!shared); }catch(e){} }
+
+  async function storageSelfTest(){
+    if(!hasCloud) return { ok:true, mode:'local' };
+    const probeKey = 'diag:probe';
+    const probeVal = String(Date.now());
+    const wrote = await sSet(probeKey, probeVal, false);
+    if(!wrote) return { ok:false, mode:'cloud', reason:'write-failed' };
+    const read = await sGet(probeKey, false);
+    if(read !== probeVal) return { ok:false, mode:'cloud', reason:'read-mismatch' };
+    return { ok:true, mode:'cloud' };
+  }
+
+  /* =================================================================
+     관리자 자동 기록 (Google Apps Script 연동)
+     아래 DRIVE_LOG_URL에 관리자(제작자)의 Apps Script 웹앱 URL을
+     붙여넣으면, 정보입력·녹화/업로드·자세분석·기록저장 등 모든 활동이
+     관리자의 구글 시트(드라이브)에 개인별로 자동 기록됩니다.
+     비워두면(기본값) 아무 것도 전송하지 않습니다.
+  ================================================================= */
+  const DRIVE_LOG_URL = ''; // 예: 'https://script.google.com/macros/s/XXXX/exec'
+  let _logName = '';
+  function driveLog(event, detail){
+    if(!DRIVE_LOG_URL) return;
+    try{
+      fetch(DRIVE_LOG_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({ time:new Date().toISOString(), name:_logName || '이름미입력', event, detail: detail || {} })
+      });
+    }catch(e){}
+  }
+
+  /* ---------------- tab switching ---------------- */
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      tabBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('panel'+btn.dataset.tab).classList.add('active');
+      if(btn.dataset.tab === '6') loadStats();
+      if(btn.dataset.tab === '5') loadSummary();
+      if(btn.dataset.tab === '4') loadStdevExample();
+    });
+  });
+
+  function showStatus(el, msg, ok){
+    el.textContent = msg;
+    el.className = 'status-msg show ' + (ok ? 'status-ok' : 'status-err');
+    setTimeout(()=>{ el.classList.remove('show'); }, 3800);
+  }
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  /* ---------------- TAB 1: profile ---------------- */
+  let selectedGender = null;
+  const genderRow = document.getElementById('genderRow');
+  genderRow.querySelectorAll('.radio-opt').forEach(opt=>{
+    opt.addEventListener('click', ()=>{
+      genderRow.querySelectorAll('.radio-opt').forEach(o=>o.classList.remove('sel'));
+      opt.classList.add('sel');
+      selectedGender = opt.dataset.g;
+      recalcGrades(); // 성별이 바뀌면 탭3 등급도 즉시 갱신
+    });
+  });
+
+  document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('inName').value.trim();
+    const age = document.getElementById('inAge').value;
+    const statusEl = document.getElementById('profileStatus');
+    const loader = document.getElementById('profileLoader');
+    if(!name || !age || !selectedGender){ showStatus(statusEl, '이름, 나이, 성별을 모두 입력해주세요.', false); return; }
+    loader.classList.add('show');
+    const profile = {name, age:Number(age), gender:selectedGender, savedAt:Date.now()};
+    const ok = await sSet('profile:current', JSON.stringify(profile), false);
+    _logName = name;
+    driveLog('정보입력 저장', {이름:name, 나이:Number(age), 성별:selectedGender});
+    loader.classList.remove('show');
+    showStatus(statusEl, ok ? `${name}님의 정보가 저장되었습니다.` : '저장에 실패했습니다. 다시 시도해주세요.', ok);
+  });
+
+  async function loadProfileIntoForm(){
+    const raw = await sGet('profile:current', false);
+    if(!raw) return null;
+    try{
+      const p = JSON.parse(raw);
+      _logName = p.name || '';
+      document.getElementById('inName').value = p.name || '';
+      document.getElementById('inAge').value = p.age || '';
+      if(p.gender){
+        selectedGender = p.gender;
+        genderRow.querySelectorAll('.radio-opt').forEach(o=> o.classList.toggle('sel', o.dataset.g === p.gender));
+      }
+      return p;
+    }catch(e){ return null; }
+  }
+
+  /* =================================================================
+     TAB 2 — AI POSE ANALYZER (MediaPipe Pose Landmarker)
+     1) 포즈 추정(Pose Estimation): 영상 속 인물의 관절 위치(점)를
+        프레임마다 자동으로 찾아내고, 점을 선으로 이어 신체 형태
+        (스켈레톤)를 화면 위에 재구성합니다.
+     2) 모션 캡처(Motion Capture): 무릎·고관절 각도와 각속도(°/s)를
+        시간 축으로 기록해, 자세 가이드라인의 허용 범위를 벗어나면
+        (깊이 부족 · 락아웃 · Valgus · 좌우 비대칭 · 과속 하강 등)
+        실시간 및 종합 피드백을 제공합니다.
+  ================================================================= */
+  let poseLandmarker = null, mpLoading = null;
+  async function ensurePose(statusFn){
+    if(poseLandmarker) return poseLandmarker;
+    if(!mpLoading){
+      mpLoading = (async ()=>{
+        statusFn && statusFn('AI 관절 인식 모델을 불러오는 중입니다... (최초 1회, 몇 초 소요)', true);
+        const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+        const fileset = await vision.FilesetResolver.forVisionTasks(
+          'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+        const opts = (delegate)=>({
+          baseOptions:{
+            modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+            delegate
+          },
+          runningMode:'VIDEO', numPoses:1
+        });
+        try{ poseLandmarker = await vision.PoseLandmarker.createFromOptions(fileset, opts('GPU')); }
+        catch(e){ poseLandmarker = await vision.PoseLandmarker.createFromOptions(fileset, opts('CPU')); }
+        return poseLandmarker;
+      })().catch(e=>{ mpLoading = null; throw e; });
+    }
+    return mpLoading;
+  }
+
+  // MediaPipe pose landmark indices
+  const LM = { shoulderL:11, shoulderR:12, hipL:23, hipR:24, kneeL:25, kneeR:26, ankleL:27, ankleR:28, heelL:29, heelR:30, toeL:31, toeR:32 };
+  const SKELETON_EDGES = [
+    [11,12],[11,23],[12,24],[23,24],
+    [23,25],[25,27],[27,29],[27,31],
+    [24,26],[26,28],[28,30],[28,32],
+    [11,13],[13,15],[12,14],[14,16]
+  ];
+
+  function angleAtLm(a,b,c){
+    const v1x=a.x-b.x, v1y=a.y-b.y, v2x=c.x-b.x, v2y=c.y-b.y;
+    const m1=Math.hypot(v1x,v1y), m2=Math.hypot(v2x,v2y);
+    if(!m1 || !m2) return 0;
+    let cos = (v1x*v2x+v1y*v2y)/(m1*m2);
+    cos = Math.max(-1, Math.min(1, cos));
+    return Math.acos(cos)*180/Math.PI;
+  }
+  function trunkLeanDeg(lm){
+    // 어깨 중점 - 고관절 중점 선이 수직에서 기운 각도
+    const sx=(lm[LM.shoulderL].x+lm[LM.shoulderR].x)/2, sy=(lm[LM.shoulderL].y+lm[LM.shoulderR].y)/2;
+    const hx=(lm[LM.hipL].x+lm[LM.hipR].x)/2, hy=(lm[LM.hipL].y+lm[LM.hipR].y)/2;
+    const dx = sx-hx, dy = sy-hy;
+    return Math.abs(Math.atan2(dx, -dy))*180/Math.PI;
+  }
+  function valgusCheck(lm){
+    // 무릎 x가 발목 x보다 몸 중심선 쪽으로 치우치면 Valgus 의심 (정규화 좌표)
+    const mid = (lm[LM.hipL].x + lm[LM.hipR].x)/2;
+    const tol = Math.max(Math.abs(lm[LM.hipL].x - mid)*0.5, 0.02);
+    const vL = (lm[LM.ankleL].x < mid) ? (lm[LM.kneeL].x > lm[LM.ankleL].x + tol) : (lm[LM.kneeL].x < lm[LM.ankleL].x - tol);
+    const vR = (lm[LM.ankleR].x < mid) ? (lm[LM.kneeR].x > lm[LM.ankleR].x + tol) : (lm[LM.kneeR].x < lm[LM.ankleR].x - tol);
+    return { vL, vR };
+  }
+
+  // 종목별 각도·속도 가이드라인
+  const GUIDE = {
+    legpress: { depthMax:100, lockoutMin:172, asymMax:12, eccMax:220, conMax:400, leanMax:null },
+    squat:    { depthMax:100, topExtMin:155, asymMax:12, eccMax:220, conMax:420, leanMax:50 }
+  };
+
+  function createAnalyzer(prefix, lift){
+    const card = document.getElementById(`analyzer-${prefix}-card`);
+    const box = document.createElement('div');
+    box.innerHTML = `
+      <div class="mode-toggle">
+        <button type="button" data-mode="cam" class="on">🎥 실시간 촬영</button>
+        <button type="button" data-mode="up">📁 영상 업로드</button>
+      </div>
+      <div class="upload-box" id="${prefix}-uploadBox" style="display:none;">
+        <div class="ic">${lift==='legpress'?'🦵':'🏋️'}</div>
+        <div class="lbl">클릭하여 영상 파일 선택</div>
+        <div class="fname" id="${prefix}-fname"></div>
+      </div>
+      <input type="file" id="${prefix}-fileInput" accept="video/*" style="display:none">
+
+      <div class="btn-row" id="${prefix}-camBtns">
+        <button class="btn btn-ghost" id="${prefix}-camOnBtn">📷 카메라 활성화</button>
+        <button class="btn btn-danger" id="${prefix}-recBtn" disabled>⏺ 녹화</button>
+        <button class="btn btn-blue" id="${prefix}-startBtn" disabled>▶ 시작</button>
+        <button class="btn btn-ghost" id="${prefix}-stopBtn" disabled>■ 중지</button>
+        <button class="btn btn-ghost" id="${prefix}-resetBtn">↺ 초기화</button>
+      </div>
+      <div class="status-msg" id="${prefix}-camStatus"></div>
+      <div class="pose-badge" id="${prefix}-poseBadge" style="display:none;"></div>
+
+      <div class="cam-wrap" id="${prefix}-camWrap">
+        <video id="${prefix}-video" playsinline muted></video>
+        <canvas id="${prefix}-canvas"></canvas>
+      </div>
+
+      <div class="live-tiles" id="${prefix}-liveTiles" style="display:none;"></div>
+      <div class="fb-box" id="${prefix}-fbBox" style="display:none;">
+        <h4>실시간 피드백</h4>
+        <ul class="fb-list" id="${prefix}-fbList"></ul>
+      </div>
+      <div id="${prefix}-verdictBox"></div>
+    `;
+    card.querySelector('.hint').after(box);
+
+    const el = (id)=> document.getElementById(`${prefix}-${id}`);
+    const state = {
+      stream:null, recorder:null, chunks:[], recording:false,
+      analyzing:false, rafId:null, lastVideoTime:-1,
+      frames:[], srcReady:false, facingMode:'environment'
+    };
+
+    function showCamStatus(msg, ok){
+      const b = el('camStatus');
+      b.textContent = msg;
+      b.className = 'status-msg show ' + (ok ? 'status-ok' : 'status-err');
+    }
+    function poseBadge(msg, on){
+      const b = el('poseBadge');
+      if(msg === null){ b.style.display='none'; return; }
+      b.style.display='inline-flex';
+      b.textContent = msg;
+      b.classList.toggle('on', !!on);
+    }
+
+    // mode toggle
+    box.querySelectorAll('.mode-toggle button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        box.querySelectorAll('.mode-toggle button').forEach(x=>x.classList.remove('on'));
+        b.classList.add('on');
+        const isUp = b.dataset.mode === 'up';
+        el('uploadBox').style.display = isUp ? 'block' : 'none';
+        el('camBtns').style.display = isUp ? 'none' : 'flex';
+        if(isUp){
+          // 업로드 모드에서도 시작/중지/초기화는 필요하므로 버튼줄은 유지하되 카메라 버튼만 감춤
+          el('camBtns').style.display = 'flex';
+          el('camOnBtn').style.display = 'none';
+          el('recBtn').style.display = 'none';
+        } else {
+          el('camOnBtn').style.display = 'inline-block';
+          el('recBtn').style.display = 'inline-block';
+        }
+      });
+    });
+
+    /* ---------- 카메라 활성화 ---------- */
+    async function openCamera(facingMode){
+      try{ return await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:facingMode } }, audio:false }); }
+      catch(e1){ return await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
+    }
+    el('camOnBtn').addEventListener('click', async ()=>{
+      if(!window.isSecureContext){
+        showCamStatus('⚠ 카메라는 HTTPS(또는 localhost) 환경에서만 동작합니다. 배포된 주소로 접속해주세요. 그 전까지는 [영상 업로드]를 이용해주세요.', false);
+        return;
+      }
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        showCamStatus('⚠ 이 브라우저는 카메라 접근을 지원하지 않습니다. [영상 업로드]를 이용해주세요.', false);
+        return;
+      }
+      try{
+        if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); }
+        const stream = await openCamera(state.facingMode);
+        state.stream = stream;
+        const video = el('video');
+        video.srcObject = stream;
+        video.controls = false;
+        await video.play();
+        el('camWrap').classList.add('show');
+        el('recBtn').disabled = false;
+        showCamStatus('✓ 카메라가 활성화되었습니다. [⏺ 녹화]로 동작을 촬영해주세요.', true);
+        fitCanvas();
+      }catch(e){
+        const reason = e.name || 'UnknownError';
+        let hint = '카메라 권한을 허용한 뒤 다시 시도해주세요.';
+        if(reason === 'NotFoundError') hint = '사용 가능한 카메라를 찾지 못했습니다.';
+        if(reason === 'NotReadableError') hint = '다른 앱이 카메라를 사용 중입니다.';
+        showCamStatus(`⚠ 카메라를 사용할 수 없습니다 (${reason}). ${hint} 대신 [영상 업로드]를 이용해주세요.`, false);
+      }
+    });
+
+    /* ---------- 녹화 ---------- */
+    el('recBtn').addEventListener('click', ()=>{
+      if(!state.stream) return;
+      if(!state.recording){
+        state.chunks = [];
+        try{
+          state.recorder = new MediaRecorder(state.stream);
+          state.recorder.ondataavailable = (e)=>{ if(e.data.size>0) state.chunks.push(e.data); };
+          state.recorder.onstop = ()=>{
+            const blob = new Blob(state.chunks, { type: state.recorder.mimeType || 'video/webm' });
+            const video = el('video');
+            state.stream.getTracks().forEach(t=>t.stop());
+            state.stream = null;
+            el('recBtn').disabled = true;
+            video.srcObject = null;
+            video.src = URL.createObjectURL(blob);
+            video.controls = true;
+            state.srcReady = true;
+            el('startBtn').disabled = false;
+            driveLog('영상 녹화', {종목: lift==='legpress'?'레그프레스':'스쿼트', 방식:'실시간 촬영 녹화'});
+            showCamStatus('✓ 녹화가 완료되었습니다. [▶ 시작]을 누르면 AI 자세분석이 시작됩니다.', true);
+            fitCanvas();
+          };
+          state.recorder.start();
+          state.recording = true;
+          el('recBtn').innerHTML = '<span class="rec-dot"></span>녹화 중지';
+          el('camOnBtn').disabled = true;
+        }catch(e){ alert('이 브라우저에서는 녹화 기능을 지원하지 않습니다. 영상 업로드를 이용해주세요.'); }
+      } else {
+        state.recorder.stop();
+        state.recording = false;
+        el('recBtn').innerHTML = '⏺ 녹화';
+        el('camOnBtn').disabled = false;
+      }
+    });
+
+    /* ---------- 업로드 ---------- */
+    el('uploadBox').addEventListener('click', ()=> el('fileInput').click());
+    el('fileInput').addEventListener('change', ()=>{
+      const f = el('fileInput').files[0];
+      if(!f) return;
+      el('fname').textContent = '✓ ' + f.name;
+      const video = el('video');
+      if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); state.stream=null; }
+      video.srcObject = null;
+      video.src = URL.createObjectURL(f);
+      video.controls = true;
+      state.srcReady = true;
+      el('camWrap').classList.add('show');
+      el('startBtn').disabled = false;
+      driveLog('영상 업로드', {종목: lift==='legpress'?'레그프레스':'스쿼트', 방식:'영상 파일 업로드', 파일명: f.name});
+      showCamStatus('✓ 영상이 업로드되었습니다. [▶ 시작]을 누르면 AI 자세분석이 시작됩니다.', true);
+      fitCanvas();
+    });
+
+    /* ---------- 캔버스 ---------- */
+    function fitCanvas(){
+      const video = el('video'), canvas = el('canvas');
+      canvas.width = video.videoWidth || video.clientWidth || 640;
+      canvas.height = video.videoHeight || video.clientHeight || 360;
+    }
+    el('video').addEventListener('loadedmetadata', fitCanvas);
+    window.addEventListener('resize', ()=>{ /* canvas는 내재 해상도 기준이라 재계산 불필요 */ });
+
+    function drawSkeleton(ctx, lm, w, h, flags){
+      ctx.clearRect(0,0,w,h);
+      ctx.lineWidth = Math.max(2, w/300);
+      SKELETON_EDGES.forEach(([a,b])=>{
+        const pa = lm[a], pb = lm[b];
+        if(!pa || !pb) return;
+        ctx.strokeStyle = 'rgba(255,255,255,.85)';
+        ctx.beginPath(); ctx.moveTo(pa.x*w, pa.y*h); ctx.lineTo(pb.x*w, pb.y*h); ctx.stroke();
+      });
+      // 하체 강조 (좌: 파랑, 우: 주황)
+      const seg = (a,b,color)=>{ const pa=lm[a], pb=lm[b]; if(!pa||!pb) return;
+        ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(pa.x*w,pa.y*h); ctx.lineTo(pb.x*w,pb.y*h); ctx.stroke(); };
+      ctx.lineWidth = Math.max(3, w/220);
+      seg(LM.hipL,LM.kneeL,'#4FA9E8'); seg(LM.kneeL,LM.ankleL,'#4FA9E8'); seg(LM.ankleL,LM.toeL,'#4FA9E8');
+      seg(LM.hipR,LM.kneeR,'#FF5A36'); seg(LM.kneeR,LM.ankleR,'#FF5A36'); seg(LM.ankleR,LM.toeR,'#FF5A36');
+      lm.forEach((p,i)=>{
+        if(!p) return;
+        const r = (i>=23) ? Math.max(4, w/160) : Math.max(3, w/220);
+        ctx.beginPath(); ctx.arc(p.x*w, p.y*h, r, 0, 7);
+        let fill = '#ffffff';
+        if([23,25,27,29,31].includes(i)) fill = '#4FA9E8';
+        if([24,26,28,30,32].includes(i)) fill = '#FF5A36';
+        if(flags && ((flags.vL && (i===25)) || (flags.vR && (i===26)))) fill = '#E4423A';
+        ctx.fillStyle = fill; ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1.2; ctx.stroke();
+      });
+    }
+
+    /* ---------- 분석 루프 ---------- */
+    function pushFrame(t, lm){
+      const kL = angleAtLm(lm[LM.hipL], lm[LM.kneeL], lm[LM.ankleL]);
+      const kR = angleAtLm(lm[LM.hipR], lm[LM.kneeR], lm[LM.ankleR]);
+      const knee = (kL+kR)/2;
+      const lean = trunkLeanDeg(lm);
+      const { vL, vR } = valgusCheck(lm);
+      let vel = 0;
+      const prev = state.frames[state.frames.length-1];
+      if(prev && t > prev.t){
+        vel = (knee - prev.knee) / (t - prev.t); // °/s, 음수=하강(굽힘), 양수=상승(폄)
+        // 3프레임 지수평활
+        vel = prev.velS !== undefined ? prev.velS*0.6 + vel*0.4 : vel;
+      }
+      const f = { t, kL, kR, knee, lean, vL, vR, velS: vel };
+      state.frames.push(f);
+      return f;
+    }
+
+    function liveFeedback(f){
+      const g = GUIDE[lift];
+      const warns = [];
+      if(Math.abs(f.kL - f.kR) > g.asymMax) warns.push(`좌우 무릎 각도 차이 ${Math.abs(f.kL-f.kR).toFixed(0)}° — 비대칭 주의`);
+      if(f.vL || f.vR) warns.push('무릎이 안쪽으로 모이고 있습니다 (Valgus) — 무릎을 발끝 방향으로');
+      if(f.velS < -g.eccMax) warns.push(`하강 속도 ${Math.abs(f.velS).toFixed(0)}°/s — 너무 빠릅니다. 통제하며 내려가세요`);
+      if(lift==='squat' && g.leanMax && f.lean > g.leanMax) warns.push(`상체 기울기 ${f.lean.toFixed(0)}° — 상체가 과도하게 숙여졌습니다`);
+      if(lift==='legpress' && f.knee > GUIDE.legpress.lockoutMin && f.velS > 30) warns.push('무릎이 완전히 펴지고 있습니다 — 락아웃 전에 멈추세요');
+
+      el('liveTiles').style.display = 'grid';
+      el('liveTiles').innerHTML = `
+        <div class="angle-tile"><div class="k">왼 무릎 각도</div><div class="v">${f.kL.toFixed(0)}°</div></div>
+        <div class="angle-tile"><div class="k">오른 무릎 각도</div><div class="v">${f.kR.toFixed(0)}°</div></div>
+        <div class="angle-tile"><div class="k">각속도</div><div class="v">${f.velS>=0?'+':''}${f.velS.toFixed(0)}°/s</div></div>
+        ${lift==='squat' ? `<div class="angle-tile"><div class="k">상체 기울기</div><div class="v">${f.lean.toFixed(0)}°</div></div>` : ''}
+      `;
+      el('fbBox').style.display = 'block';
+      el('fbList').innerHTML = warns.length
+        ? warns.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join('')
+        : '<li class="ok">현재 프레임 기준 자세 양호</li>';
+      return warns;
+    }
+
+    async function startAnalysis(){
+      if(!state.srcReady){ showCamStatus('먼저 영상을 녹화하거나 업로드해주세요.', false); return; }
+      try{ await ensurePose((m,ok)=>showCamStatus(m,ok)); }
+      catch(e){
+        showCamStatus('⚠ AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
+        return;
+      }
+      const video = el('video');
+      state.frames = [];
+      state.analyzing = true;
+      state.lastVideoTime = -1;
+      el('startBtn').disabled = true;
+      el('stopBtn').disabled = false;
+      el('verdictBox').innerHTML = '';
+      poseBadge('POSE ESTIMATION · 관절 자동 인식 중', true);
+      video.currentTime = 0;
+      try{ await video.play(); }catch(e){}
+      loop();
+
+      function loop(){
+        if(!state.analyzing) return;
+        if(video.ended){ finishAnalysis(); return; }
+        if(video.currentTime !== state.lastVideoTime && video.readyState >= 2){
+          state.lastVideoTime = video.currentTime;
+          let result = null;
+          try{ result = poseLandmarker.detectForVideo(video, performance.now()); }catch(e){}
+          const canvas = el('canvas');
+          if(canvas.width !== (video.videoWidth||canvas.width)) fitCanvas();
+          const ctx = canvas.getContext('2d');
+          if(result && result.landmarks && result.landmarks[0]){
+            const lm = result.landmarks[0];
+            const f = pushFrame(video.currentTime, lm);
+            drawSkeleton(ctx, lm, canvas.width, canvas.height, {vL:f.vL, vR:f.vR});
+            liveFeedback(f);
+          } else {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            el('fbList').innerHTML = '<li class="warn">인물을 인식하지 못했습니다 — 전신이 화면에 들어오게 해주세요</li>';
+            el('fbBox').style.display = 'block';
+          }
+        }
+        state.rafId = requestAnimationFrame(loop);
+      }
+    }
+
+    function evaluateSession(){
+      const g = GUIDE[lift];
+      const fs = state.frames;
+      if(fs.length < 10) return null;
+      const minF = fs.reduce((a,b)=> b.knee < a.knee ? b : a, fs[0]);   // 하강(최대 굽힘) 지점
+      const maxF = fs.reduce((a,b)=> b.knee > a.knee ? b : a, fs[0]);   // 상승(최대 폄) 지점
+      const maxEcc = Math.max(...fs.map(f=> f.velS < 0 ? -f.velS : 0)); // 최대 하강 속도
+      const maxCon = Math.max(...fs.map(f=> f.velS > 0 ? f.velS : 0));  // 최대 상승 속도
+      const valgusRatio = fs.filter(f=>f.vL||f.vR).length / fs.length;
+      const maxAsym = Math.max(...fs.map(f=> Math.abs(f.kL - f.kR)));
+      const maxLean = Math.max(...fs.map(f=> f.lean));
+
+      const reasons = [];
+      if(lift === 'squat'){
+        if(minF.knee > g.depthMax) reasons.push(`하강 깊이 부족 — 최저 무릎 각도 ${minF.knee.toFixed(0)}° (기준 ${g.depthMax}° 이하)`);
+        if(maxF.knee < g.topExtMin) reasons.push(`상승 완료 시 무릎이 충분히 펴지지 않았습니다 (최대 ${maxF.knee.toFixed(0)}°, 기준 ${g.topExtMin}° 이상)`);
+        if(maxLean > g.leanMax) reasons.push(`상체 기울기 최대 ${maxLean.toFixed(0)}° — 과도한 숙임(기준 ${g.leanMax}° 이내)`);
+      } else {
+        if(minF.knee > g.depthMax) reasons.push(`하강 시 무릎 각도가 ${minF.knee.toFixed(0)}°까지만 굽혀져 가동범위가 부족합니다 (기준 ${g.depthMax}° 이하)`);
+        if(maxF.knee > g.lockoutMin) reasons.push(`상승 시 무릎이 ${maxF.knee.toFixed(0)}°까지 완전히 펴졌습니다 — 락아웃 부상 위험 (기준 ${g.lockoutMin}° 미만에서 정지)`);
+      }
+      if(maxAsym > g.asymMax) reasons.push(`좌우 무릎 각도 비대칭 최대 ${maxAsym.toFixed(0)}° (기준 ${g.asymMax}° 이내)`);
+      if(valgusRatio > 0.15) reasons.push(`전체 동작의 ${(valgusRatio*100).toFixed(0)}% 구간에서 무릎이 안쪽으로 모였습니다 (Valgus)`);
+      if(maxEcc > g.eccMax) reasons.push(`하강 최대 각속도 ${maxEcc.toFixed(0)}°/s — 통제되지 않은 빠른 하강 (기준 ${g.eccMax}°/s 이내)`);
+      if(maxCon > g.conMax) reasons.push(`상승 최대 각속도 ${maxCon.toFixed(0)}°/s — 반동 사용 가능성 (기준 ${g.conMax}°/s 이내)`);
+
+      return {
+        lift, verdict: reasons.length === 0 ? '인정' : '불인정', reasons,
+        bottom: { kneeAngleL: minF.kL, kneeAngleR: minF.kR },
+        top: { kneeAngleL: maxF.kL, kneeAngleR: maxF.kR },
+        motion: { maxEccVel: maxEcc, maxConVel: maxCon, maxAsym, valgusRatio, maxLean, frameCount: fs.length },
+        savedAt: Date.now()
+      };
+    }
+
+    function renderVerdict(result){
+      const ok = result.verdict === '인정';
+      const m = result.motion || {};
+      el('verdictBox').innerHTML = `
+        <div class="verdict-pill ${ok?'verdict-ok':'verdict-bad'}">${ok?'✓ 인정':'✕ 불인정'}</div>
+        ${ok ? '' : `<ul class="reason-list">${result.reasons.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ul>`}
+        <div class="phase-result">
+          <div class="angle-tile"><div class="k">하강 최저 무릎 각도 (좌/우)</div><div class="v">${(result.bottom.kneeAngleL||0).toFixed(0)}° / ${(result.bottom.kneeAngleR||0).toFixed(0)}°</div></div>
+          <div class="angle-tile"><div class="k">상승 최대 무릎 각도 (좌/우)</div><div class="v">${(result.top.kneeAngleL||0).toFixed(0)}° / ${(result.top.kneeAngleR||0).toFixed(0)}°</div></div>
+          ${m.maxEccVel!==undefined ? `<div class="angle-tile"><div class="k">하강 최대 속도</div><div class="v">${m.maxEccVel.toFixed(0)}°/s</div></div>` : ''}
+          ${m.maxConVel!==undefined ? `<div class="angle-tile"><div class="k">상승 최대 속도</div><div class="v">${m.maxConVel.toFixed(0)}°/s</div></div>` : ''}
+          ${m.maxAsym!==undefined ? `<div class="angle-tile"><div class="k">좌우 비대칭 최대</div><div class="v">${m.maxAsym.toFixed(0)}°</div></div>` : ''}
+          ${m.valgusRatio!==undefined ? `<div class="angle-tile"><div class="k">Valgus 감지 구간</div><div class="v">${(m.valgusRatio*100).toFixed(0)}%</div></div>` : ''}
+        </div>`;
+    }
+
+    function finishAnalysis(){
+      state.analyzing = false;
+      if(state.rafId) cancelAnimationFrame(state.rafId);
+      el('startBtn').disabled = false;
+      el('stopBtn').disabled = true;
+      poseBadge('분석 완료', false);
+      const result = evaluateSession();
+      if(!result){
+        showCamStatus('⚠ 인식된 프레임이 부족해 판정할 수 없습니다. 전신이 나오도록 다시 촬영해주세요.', false);
+        return;
+      }
+      renderVerdict(result);
+      sSet(`analysis:${lift}`, JSON.stringify(result), false);
+      driveLog('자세분석 완료', {종목: lift==='legpress'?'레그프레스':'스쿼트', 판정: result.verdict, 사유: result.reasons,
+        하강최저무릎각: Math.round((result.bottom.kneeAngleL+result.bottom.kneeAngleR)/2),
+        상승최대무릎각: Math.round((result.top.kneeAngleL+result.top.kneeAngleR)/2)});
+      showCamStatus('✓ 자세분석이 완료되어 결과가 저장되었습니다.', true);
+    }
+
+    el('startBtn').addEventListener('click', startAnalysis);
+    el('stopBtn').addEventListener('click', ()=>{ el('video').pause(); finishAnalysis(); });
+    el('resetBtn').addEventListener('click', ()=>{
+      state.analyzing = false;
+      if(state.rafId) cancelAnimationFrame(state.rafId);
+      if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); state.stream=null; }
+      const video = el('video');
+      video.pause(); video.srcObject = null; video.removeAttribute('src'); video.load();
+      state.frames = []; state.srcReady = false; state.recording = false;
+      const canvas = el('canvas'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+      el('camWrap').classList.remove('show');
+      el('liveTiles').style.display = 'none';
+      el('fbBox').style.display = 'none';
+      el('verdictBox').innerHTML = '';
+      el('fname').textContent = '';
+      el('fileInput').value = '';
+      el('recBtn').disabled = true; el('recBtn').innerHTML = '⏺ 녹화';
+      el('startBtn').disabled = true; el('stopBtn').disabled = true;
+      el('camOnBtn').disabled = false;
+      el('camStatus').className = 'status-msg';
+      poseBadge(null);
+    });
+
+    // 이전 저장 결과 복원
+    (async ()=>{
+      const raw = await sGet(`analysis:${lift}`, false);
+      if(raw){ try{ renderVerdict(JSON.parse(raw)); }catch(e){} }
+    })();
+  }
+
+  createAnalyzer('legpress', 'legpress');
+  createAnalyzer('squat', 'squat');
+
+  /* =================================================================
+     TAB 3 — grade tables (실시간 등급 표시) + record save + illustrations
+     - 레그프레스: ACSM 20대 기준 "체중 대비 1RM 비율" 표 (5등급)
+     - 스쿼트: 체중별 절대 중량 스트렝스 스탠다드 표 (Beginner~Elite, 남/여 별도)
+  ================================================================= */
+  const LP_RATIO_TABLE = [
+    {grade:1, label:'1등급 (Superior)',   pct:'상위 10% (90th)', male:[2.27, Infinity], female:[1.82, Infinity]},
+    {grade:2, label:'2등급 (Excellent)',  pct:'상위 30% (70th)', male:[2.05, 2.27],      female:[1.58, 1.82]},
+    {grade:3, label:'3등급 (Average)',    pct:'평균 (50th)',     male:[1.91, 2.05],      female:[1.44, 1.58]},
+    {grade:4, label:'4등급 (Fair)',       pct:'하위 30% (30th)', male:[1.74, 1.91],      female:[1.27, 1.44]},
+    {grade:5, label:'5등급 (Poor)',       pct:'하위 10% (10th)', male:[0, 1.74],         female:[0, 1.27]}
+  ];
+  // [체중kg, Beginner, Novice, Intermediate, Advanced, Elite]
+  const SQUAT_STD_MALE = [
+    [50,31,46,65,88,113],[55,35,52,73,97,123],[60,40,58,79,104,132],[65,45,63,86,112,140],
+    [70,50,69,92,119,148],[75,54,74,98,126,156],[80,59,79,104,133,163],[85,63,84,110,139,170],
+    [90,67,89,115,145,177],[95,71,94,121,151,184],[100,75,98,126,157,190],[105,79,103,131,163,196],
+    [110,83,107,136,168,202],[115,86,111,141,173,208],[120,90,115,145,178,213],[125,94,119,150,183,219],
+    [130,97,123,154,188,224],[135,100,127,158,193,229],[140,104,131,162,198,234]
+  ];
+  const SQUAT_STD_FEMALE = [
+    [40,21,32,47,64,83],[45,23,35,50,68,88],[50,25,38,54,72,92],[55,28,41,57,76,96],
+    [60,30,43,60,79,100],[65,32,45,62,82,103],[70,34,48,65,85,107],[75,35,50,67,88,110],
+    [80,37,52,70,91,113],[85,39,54,72,93,116],[90,40,56,74,96,118],[95,42,57,76,98,121],
+    [100,43,59,78,100,124],[105,45,61,80,102,126],[110,46,62,82,104,128],[115,47,64,84,106,130],
+    [120,49,65,85,108,133]
+  ];
+  const GRADE_NAMES = {1:'1등급 · 최우수',2:'2등급 · 우수',3:'3등급 · 보통',4:'4등급 · 노력요함',5:'5등급 · 미흡'};
+  const SQ_TIER_NAMES = {1:'Elite',2:'Advanced',3:'Intermediate',4:'Novice',5:'Beginner'};
+
+  function lpGradeFromRatio(gender, ratio){
+    for(const row of LP_RATIO_TABLE){
+      const range = gender === '여' ? row.female : row.male;
+      if(ratio >= range[0] && ratio < range[1]) return row.grade;
+    }
+    return 5;
+  }
+  function nearestSquatRow(gender, weight){
+    const table = gender === '여' ? SQUAT_STD_FEMALE : SQUAT_STD_MALE;
+    let best = table[0], bestDiff = Infinity;
+    for(const row of table){ const diff = Math.abs(row[0]-weight); if(diff < bestDiff){ bestDiff = diff; best = row; } }
+    return best;
+  }
+  function squatGradeFromRow(row, sq){
+    if(sq >= row[5]) return 1;
+    if(sq >= row[4]) return 2;
+    if(sq >= row[3]) return 3;
+    if(sq >= row[2]) return 4;
+    return 5;
+  }
+
+  function gradeBannerHtml(grade, text){
+    return `<div class="grade-banner">
+      <span class="gb-badge g${grade}">${grade}등급</span>
+      <span class="gb-text">${text}</span>
+    </div>`;
+  }
+
+  function renderLegpressRatioTable(gender, ratio, lp, bw){
+    const grade = lpGradeFromRatio(gender, ratio);
+    const banner = gradeBannerHtml(grade,
+      `레그프레스 1RM <b>${lp}kg</b> ÷ 체중 <b>${bw}kg</b> = 배율 <b>${ratio.toFixed(2)}×</b> → <b>${GRADE_NAMES[grade]}</b>에 해당합니다.`);
+    const rows = LP_RATIO_TABLE.map(row=>{
+      const range = gender === '여' ? row.female : row.male;
+      const hit = ratio >= range[0] && ratio < range[1];
+      const maleTxt = row.male[1] === Infinity ? `${row.male[0]} 이상` : `${row.male[0]} ~ ${row.male[1].toFixed(2)}`;
+      const femaleTxt = row.female[1] === Infinity ? `${row.female[0]} 이상` : `${row.female[0]} ~ ${row.female[1].toFixed(2)}`;
+      return `<tr class="row-g${row.grade} ${hit?'row-hit':''}">
+        <td class="g-name">${row.label}</td><td>${row.pct}</td>
+        <td style="${gender!=='여'&&hit?'font-weight:700;color:var(--accent);':''}">${maleTxt}</td>
+        <td style="${gender==='여'&&hit?'font-weight:700;color:var(--accent);':''}">${femaleTxt}</td>
+        <td>${hit? '← 내 배율 ('+ratio.toFixed(2)+'×)' : ''}</td>
+      </tr>`;
+    }).join('');
+    return `<h3 class="sub-heading">레그프레스 상대 근력 등급표 (ACSM 20대 기준)</h3>
+      ${banner}
+      <p class="hint" style="margin-bottom:8px;">계산식: 레그프레스 1RM(kg) ÷ 자신의 체중(kg) — 값을 입력하면 해당 등급이 위에 바로 표시되고, 표에서 그 구간이 색상으로 강조됩니다.</p>
+      <table class="thresh-table"><thead><tr><th>등급</th><th>백분위</th><th>남성 비율</th><th>여성 비율</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderSquatStdTable(gender, weight, sq){
+    const hitRow = weight ? nearestSquatRow(gender, weight) : null;
+    const grade = hitRow ? squatGradeFromRow(hitRow, sq) : null;
+    const banner = grade
+      ? gradeBannerHtml(grade, `체중 <b>${weight}kg</b> 구간에서 스쿼트 1RM <b>${sq}kg</b>은 <b>${GRADE_NAMES[grade]} (${SQ_TIER_NAMES[grade]})</b>에 해당합니다.`)
+      : '';
+    function buildTable(table, isUserGender){
+      const rows = table.map(row=>{
+        const isHitRow = isUserGender && hitRow && row[0] === hitRow[0];
+        const hitGrade = isHitRow ? squatGradeFromRow(row, sq) : null;
+        const cells = [1,2,3,4,5].map(colIdx=> `<td>${row[colIdx]}</td>`);
+        if(isHitRow){
+          const gradeToColIdx = {1:5,2:4,3:3,4:2,5:1};
+          const idx = gradeToColIdx[hitGrade];
+          cells[idx-1] = `<td class="cell-hit">${row[idx]}</td>`;
+        }
+        return `<tr class="${isHitRow?'row-hit':''}"><td class="bw">${row[0]}</td>${cells.join('')}</tr>`;
+      }).join('');
+      return `<div class="table-scroll"><table class="std-table">
+        <thead><tr><th>체중(kg)</th><th>Beginner</th><th>Novice</th><th>Intermediate</th><th>Advanced</th><th>Elite</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>`;
+    }
+    return `<h3 class="sub-heading">스쿼트 절대 근력 등급표 (체중별)</h3>
+      ${banner}
+      <h3 class="sub-heading" style="margin-top:12px;">남성</h3>
+      ${buildTable(SQUAT_STD_MALE, gender !== '여')}
+      <h3 class="sub-heading" style="margin-top:16px;">여성</h3>
+      ${buildTable(SQUAT_STD_FEMALE, gender === '여')}`;
+  }
+
+  /* ---------- 무게 적재 그림 ---------- */
+  const PLATE_DEFS = [ {kg:20,color:'var(--plate-red)',h:74,w:16}, {kg:10,color:'var(--plate-yellow)',h:58,w:13},
+    {kg:5,color:'var(--plate-green)',h:44,w:11}, {kg:2.5,color:'var(--plate-gray)',h:32,w:8} ];
+  function breakdownPlates(perSideKg){
+    let remaining = Math.max(0, perSideKg); const stack = [];
+    for(const p of PLATE_DEFS){ while(remaining + 1e-6 >= p.kg && stack.length < 10){ stack.push(p); remaining -= p.kg; } }
+    return stack;
+  }
+
+  // 레그프레스: 중앙 발판 + 발 2개, 양쪽에 원판 스택
+  function legpressSVG(totalWeight){
+    const perSide = Math.max(0, totalWeight)/2;
+    const stack = breakdownPlates(perSide);
+    const gap = 3;
+    const plateTotalW = stack.reduce((s,p)=>s+p.w+gap,0);
+    const width = 300 + plateTotalW*2;
+    const height = 170;
+    const baseY = 128;
+    const cx = width/2;
+    let svg = `<svg width="${Math.min(width,600)}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+    // 슬레드 레일(중앙)
+    svg += `<rect x="${cx-78}" y="${baseY-6}" width="156" height="10" rx="3" fill="#5a5a66"/>`;
+    // 중앙 발판(비스듬한 판)
+    const py = baseY-58;
+    svg += `<rect x="${cx-46}" y="${py}" width="92" height="18" rx="5" fill="#7a7a86" transform="rotate(-18 ${cx} ${py+9})"/>`;
+    // 발판 위에 올라간 두 발
+    svg += `<ellipse cx="${cx-18}" cy="${py-11}" rx="11" ry="18" fill="#c7c6d1" transform="rotate(-18 ${cx-18} ${py-11})"/>`;
+    svg += `<ellipse cx="${cx+18}" cy="${py-19}" rx="11" ry="18" fill="#e8e7e2" transform="rotate(-18 ${cx+18} ${py-19})"/>`;
+    // 양쪽 페그 + 원판 스택
+    [-1,1].forEach(dir=>{
+      const pegX = cx + dir*84;
+      svg += `<rect x="${dir>0?pegX:pegX-10}" y="${baseY-4}" width="10" height="6" fill="#5a5a66"/>`;
+      let cursor = pegX + dir*8;
+      stack.forEach(p=>{
+        const px = dir>0 ? cursor : cursor - p.w;
+        svg += `<rect x="${px}" y="${baseY-p.h}" width="${p.w}" height="${p.h}" rx="3" fill="${p.color}" stroke="#00000055"/>`;
+        cursor += dir*(p.w+gap);
+      });
+    });
+    svg += `</svg>`;
+    return svg;
+  }
+
+  // 스쿼트: 두꺼운 체형의 사람 실루엣 + 양쪽 원판
+  function squatSVG(totalWeight){
+    const barKg = 20;
+    const usable = Math.max(0, totalWeight-barKg);
+    const perSide = usable/2;
+    const stack = breakdownPlates(perSide);
+    const gap = 3;
+    const plateTotalW = stack.reduce((s,p)=>s+p.w+gap,0);
+    const width = 240 + plateTotalW*2;
+    const height = 185;
+    const barY = 50;
+    let svg = `<svg width="${Math.min(width,600)}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+    const cx = width/2;
+    // 바
+    svg += `<rect x="${cx-64}" y="${barY-4}" width="128" height="8" rx="2" fill="#5a5a66"/>`;
+    // 양쪽 슬리브 + 원판
+    [-1,1].forEach(dir=>{
+      let cursor = cx + dir*64;
+      const sleeveW=18;
+      svg += `<rect x="${dir>0?cursor:cursor-sleeveW}" y="${barY-6}" width="${sleeveW}" height="12" rx="2" fill="#7a7a86"/>`;
+      cursor += dir*sleeveW;
+      stack.forEach(p=>{
+        const px = dir>0?cursor:cursor-p.w;
+        svg += `<rect x="${px}" y="${barY-p.h/2}" width="${p.w}" height="${p.h}" rx="3" fill="${p.color}" stroke="#00000055"/>`;
+        cursor += dir*(p.w+gap);
+      });
+    });
+    // 사람(두꺼운 실루엣)
+    svg += `<circle cx="${cx}" cy="${barY+24}" r="14" fill="#e8e7e2"/>`;                       // 머리
+    svg += `<rect x="${cx-13}" y="${barY+36}" width="26" height="34" rx="12" fill="#e8e7e2"/>`; // 몸통
+    // 팔 (바를 잡음)
+    svg += `<path d="M ${cx-8} ${barY+42} L ${cx-30} ${barY+8} M ${cx+8} ${barY+42} L ${cx+30} ${barY+8}" stroke="#e8e7e2" stroke-width="10" stroke-linecap="round" fill="none"/>`;
+    // 굽힌 다리 (허벅지·종아리 두껍게)
+    svg += `<path d="M ${cx-7} ${barY+68} L ${cx-30} ${barY+94} L ${cx-25} ${barY+128} M ${cx+7} ${barY+68} L ${cx+30} ${barY+94} L ${cx+25} ${barY+128}" stroke="#e8e7e2" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+    // 발
+    svg += `<rect x="${cx-37}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/><rect x="${cx+13}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/>`;
+    svg += `</svg>`;
+    return svg;
+  }
+
+  /* ---------- 실시간 등급 계산 (입력 즉시 반영) ---------- */
+  function recalcGrades(){
+    const lp = Number(document.getElementById('inLegpress').value);
+    const sq = Number(document.getElementById('inSquat').value);
+    const bw = Number(document.getElementById('inGradeWeight').value);
+    const gender = selectedGender;
+    if(!gender || !bw || (!lp && !sq)) return;
+
+    document.getElementById('threshCard').style.display = 'block';
+    if(lp){
+      const ratio = lp/bw;
+      document.getElementById('lpThreshWrap').innerHTML = renderLegpressRatioTable(gender, ratio, lp, bw);
+    }
+    if(sq){
+      document.getElementById('sqThreshWrap').innerHTML = renderSquatStdTable(gender, bw, sq);
+    }
+    if(lp && sq){
+      const ratio = lp/bw;
+      const lpGrade = lpGradeFromRatio(gender, ratio);
+      const sqGrade = squatGradeFromRow(nearestSquatRow(gender, bw), sq);
+      document.getElementById('gradeResultCard').style.display = 'block';
+      document.getElementById('lpWeightDisp').textContent = lp + ' kg';
+      document.getElementById('sqWeightDisp').textContent = sq + ' kg';
+      document.getElementById('lpGradeLabel').textContent = GRADE_NAMES[lpGrade];
+      document.getElementById('sqGradeLabel').textContent = GRADE_NAMES[sqGrade];
+      const lpBadge = document.getElementById('lpGradeBadge'); const sqBadge = document.getElementById('sqGradeBadge');
+      lpBadge.textContent = lpGrade+'등급'; lpBadge.className = 'grade-badge g'+lpGrade; lpBadge.style.fontSize='12px';
+      sqBadge.textContent = sqGrade+'등급'; sqBadge.className = 'grade-badge g'+sqGrade; sqBadge.style.fontSize='12px';
+      document.getElementById('lpPlateGrade').textContent = '— ' + lpGrade + '등급';
+      document.getElementById('sqPlateGrade').textContent = '— ' + sqGrade + '등급';
+      document.getElementById('lpPlateWrap').innerHTML = legpressSVG(lp);
+      document.getElementById('sqPlateWrap').innerHTML = squatSVG(sq);
+    }
+  }
+  ['inLegpress','inSquat','inGradeWeight'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', recalcGrades);
+  });
+
+  /* ---------- 기록 저장 ---------- */
+  document.getElementById('checkGradeBtn').addEventListener('click', async ()=>{
+    const statusEl = document.getElementById('gradeStatus');
+    const loader = document.getElementById('gradeLoader');
+    const lp = Number(document.getElementById('inLegpress').value);
+    const sq = Number(document.getElementById('inSquat').value);
+    const bw = Number(document.getElementById('inGradeWeight').value);
+    if(!lp || !sq){ showStatus(statusEl, '레그프레스와 스쿼트 1RM을 모두 입력해주세요.', false); return; }
+    if(!bw){ showStatus(statusEl, '등급 판정을 위해 몸무게(kg)도 입력해주세요.', false); return; }
+    loader.classList.add('show');
+    const profileRaw = await sGet('profile:current', false);
+    let profile = null;
+    try{ profile = profileRaw ? JSON.parse(profileRaw) : null; }catch(e){}
+    if(!profile){ loader.classList.remove('show'); showStatus(statusEl, '먼저 [정보입력] 탭에서 기본 정보를 저장해주세요.', false); return; }
+
+    const ratio = lp / bw;
+    const lpGrade = lpGradeFromRatio(profile.gender, ratio);
+    const sqGrade = squatGradeFromRow(nearestSquatRow(profile.gender, bw), sq);
+
+    // 탭4 자동 연동용 몸무게 저장
+    let prevBody = {};
+    try{ prevBody = JSON.parse(await sGet('profile:body', false) || '{}'); }catch(e){}
+    await sSet('profile:body', JSON.stringify({height: prevBody.height || null, weight: bw}), false);
+
+    recalcGrades();
+
+    const record = { name: profile.name, age: profile.age, gender: profile.gender,
+      legpress: lp, squat: sq, weight: bw, lpGrade, sqGrade, savedAt: Date.now() };
+    const id = 'rec_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+
+    let myList = [];
+    const rawList = await sGet('my-records', false);
+    if(rawList){ try{ myList = JSON.parse(rawList); }catch(e){ myList = []; } }
+    myList.push(record);
+    await sSet('my-records', JSON.stringify(myList), false);
+
+    const sharedOk = await sSet('record2:'+id, JSON.stringify(record), true);
+    driveLog('1RM 기록 저장', {레그프레스kg: lp, 스쿼트kg: sq, 몸무게kg: bw, 레그프레스등급: lpGrade+'등급', 스쿼트등급: sqGrade+'등급'});
+
+    loader.classList.remove('show');
+    showStatus(
+      statusEl,
+      sharedOk
+        ? '기록이 저장되었습니다. [05 종합결과]와 [06 통계] 탭에서 확인할 수 있습니다.'
+        : '등급은 계산되었지만 통계 저장에는 실패했습니다. 이 아티팩트가 아직 "게시(Publish)"되지 않았다면 저장이 되지 않는 것이 정상이니, 게시 후 다시 시도해주세요.',
+      sharedOk
+    );
+  });
+
+  /* =================================================================
+     TAB 4 — comparison, muscle maps, deviation, prescription(확장)
+  ================================================================= */
+  function bodySVG(view, highlights){
+    let svg = `<svg width="90" height="198" viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg">`;
+    svg += `<circle cx="50" cy="20" r="14" fill="#3a3a44" stroke="#55545f"/>`;
+    svg += `<path d="M50 34 L50 120 M50 44 L20 90 M50 44 L80 90 M50 120 L28 200 M50 120 L72 200" stroke="#3a3a44" stroke-width="16" stroke-linecap="round" fill="none"/>`;
+    highlights.forEach(h=>{
+      svg += `<ellipse cx="${h.cx}" cy="${h.cy}" rx="${h.rx}" ry="${h.ry}" fill="#E4423A" opacity="0.75"/>`;
+    });
+    svg += `</svg>`;
+    return svg;
+  }
+  function muscleMapPair(frontHi, backHi){
+    return `<div class="muscle-col">${bodySVG('front',frontHi)}<div class="cap">앞면</div></div>
+            <div class="muscle-col">${bodySVG('back',backHi)}<div class="cap">뒷면</div></div>`;
+  }
+  document.getElementById('lpMuscleMap').innerHTML = muscleMapPair(
+    [{cx:32,cy:150,rx:11,ry:32},{cx:68,cy:150,rx:11,ry:32}],
+    [{cx:32,cy:128,rx:12,ry:14},{cx:68,cy:128,rx:12,ry:14}]
+  );
+  document.getElementById('sqMuscleMap').innerHTML = muscleMapPair(
+    [{cx:32,cy:150,rx:11,ry:32},{cx:68,cy:150,rx:11,ry:32},{cx:50,cy:80,rx:16,ry:22}],
+    [{cx:32,cy:128,rx:12,ry:14},{cx:68,cy:128,rx:12,ry:14},{cx:50,cy:70,rx:14,ry:16},{cx:30,cy:175,rx:9,ry:20},{cx:70,cy:175,rx:9,ry:20}]
+  );
+
+  document.getElementById('loadRecordBtn').addEventListener('click', async ()=>{
+    const loader = document.getElementById('loadRecordLoader');
+    const box = document.getElementById('loadedRecordBox');
+    loader.classList.add('show');
+    const rawList = await sGet('my-records', false);
+    loader.classList.remove('show');
+    let list = [];
+    if(rawList){ try{ list = JSON.parse(rawList); }catch(e){} }
+    if(!list.length){
+      box.innerHTML = '<div class="empty-state">저장된 개인 기록이 없습니다. [기록·등급] 탭에서 먼저 저장해주세요.</div>';
+      window._latestRecord = null;
+      return;
+    }
+    const latest = list[list.length-1];
+    window._latestRecord = latest;
+    box.innerHTML = `<div class="result-row"><div class="info">
+        <div class="lift-name">${escapeHtml(latest.name)} · ${latest.age}세 · ${latest.gender==='여'?'여성':'남성'}</div>
+        <div class="weight">레그프레스 ${latest.legpress}kg &nbsp;/&nbsp; 스쿼트 ${latest.squat}kg</div>
+        <div class="grade-label">${new Date(latest.savedAt).toLocaleString('ko-KR')} 저장됨</div>
+      </div></div>`;
+  });
+
+  const STRENGTH_MULT = {
+    squat:    { '남':[0.75,1.25,1.75], '여':[0.5,0.9,1.3] },
+    legpress: { '남':[1.5,2.5,3.5],   '여':[1.1,1.9,2.7] }
+  };
+  function strengthLevel(lift, gender, ratio){
+    const [a,b,c] = STRENGTH_MULT[lift][gender==='여'?'여':'남'];
+    if(ratio < a) return '입문';
+    if(ratio < b) return '초급~중급';
+    if(ratio < c) return '중급~상급';
+    return '상급 이상';
+  }
+
+  document.getElementById('analyzeDeviationBtn').addEventListener('click', async ()=>{
+    const bodyStatus = document.getElementById('bodyStatus');
+    const height = Number(document.getElementById('inHeight').value);
+    const weight = Number(document.getElementById('inWeight').value);
+    const rec = window._latestRecord;
+    if(!rec){ showStatus(bodyStatus, '먼저 [개인 기록 불러오기]를 눌러 기록을 불러와주세요.', false); return; }
+    if(!height || !weight){ showStatus(bodyStatus, '키와 몸무게를 입력해주세요.', false); return; }
+    await sSet('profile:body', JSON.stringify({height, weight}), false);
+
+    const ratio = rec.legpress / rec.squat;
+    const sqBW = rec.squat / weight;
+    const lpBW = rec.legpress / weight;
+    const bmi = (weight / Math.pow(height/100,2)).toFixed(1);
+
+    document.getElementById('deviationCard').style.display = 'block';
+    document.getElementById('ratioGrid').innerHTML = `
+      <div class="ratio-cell"><div class="k">레그프레스÷스쿼트</div><div class="v">${ratio.toFixed(2)}×</div></div>
+      <div class="ratio-cell"><div class="k">스쿼트÷체중</div><div class="v">${sqBW.toFixed(2)}×</div></div>
+      <div class="ratio-cell"><div class="k">레그프레스÷체중</div><div class="v">${lpBW.toFixed(2)}×</div></div>
+    `;
+
+    let verdict, reason;
+    if(ratio < 1.5){ verdict='일반 참고치보다 낮은 배율입니다.'; reason='스쿼트 기록이 레그프레스 대비 상대적으로 높습니다. 코어·균형 능력이 좋거나 스쿼트 숙련도가 높을 가능성이 있습니다.'; }
+    else if(ratio > 2.0){ verdict='일반 참고치보다 높은 배율입니다.'; reason='레그프레스가 스쿼트 대비 크게 앞서 있습니다. 하체 근력 자체는 충분하지만 코어 안정성이나 스쿼트 동작 숙련도가 상대적으로 부족할 수 있습니다.'; }
+    else { verdict='참고 범위(1.5~2.0배) 안에 있습니다.'; reason='두 종목 간 근력 발현이 비교적 균형적입니다.'; }
+
+    const sqLevel = strengthLevel('squat', rec.gender, sqBW);
+    const lpLevel = strengthLevel('legpress', rec.gender, lpBW);
+
+    let jointNote = '';
+    const lpA = JSON.parse(await sGet('analysis:legpress', false) || 'null');
+    const sqA = JSON.parse(await sGet('analysis:squat', false) || 'null');
+    if(lpA || sqA){
+      jointNote += '<br><br><b>자세분석 연동 소견:</b><br>';
+      if(sqA) jointNote += `스쿼트 — ${sqA.verdict==='인정' ? '측정된 관절 각도상 기준을 충족합니다.' : sqA.reasons.join(' / ')}<br>`;
+      if(lpA) jointNote += `레그프레스 — ${lpA.verdict==='인정' ? '측정된 관절 각도상 기준을 충족합니다.' : lpA.reasons.join(' / ')}`;
+    }
+
+    document.getElementById('deviationText').innerHTML = `
+      <b>${escapeHtml(rec.name)}</b>님의 배율은 <b>${ratio.toFixed(2)}배</b>입니다. ${verdict} ${reason}<br><br>
+      신장 ${height}cm · 체중 ${weight}kg (BMI ${bmi})<br>
+      하체 밀기 근력(체중 대비): 스쿼트 <b>${sqLevel}</b> 수준(${sqBW.toFixed(2)}×체중) · 레그프레스 <b>${lpLevel}</b> 수준(${lpBW.toFixed(2)}×체중)<br>
+      ※ 본 시스템은 하체(스쿼트·레그프레스) 기록만 다루므로 상체 근력은 별도 측정이 필요합니다.
+      ${jointNote}`;
+
+    renderPrescription(rec, {sqA, lpA, ratio, sqBW, lpBW, sqLevel, lpLevel});
+    showStatus(bodyStatus, '분석이 완료되었습니다.', true);
+  });
+
+  /* ---------- 운동 처방 (확장) ---------- */
+  const RX_LIBRARY = {
+    valgus: {ic:'🦵',title:'무릎 정렬 교정', body:'미니 밴드 스쿼트, 클램쉘, 사이드 스텝으로 고관절 외회전근(중둔근)을 강화해 무릎이 안쪽으로 모이는 것을 방지하세요. 스쿼트/레그프레스 모두 "무릎은 발끝 방향"을 큐잉하며 가벼운 중량으로 반복 연습합니다. 주 2~3회, 밴드 운동 각 15회×3세트.'},
+    depth: {ic:'📐',title:'가동범위 확보', body:'맨몸 고블릿 스쿼트로 목표 깊이까지 내려가는 감각을 익히고, 발목(벽 무릎 터치)·고관절(90/90 스트레칭) 가동성 운동을 병행하세요. 박스 스쿼트로 정확한 하강 깊이를 반복 학습하면 효과적입니다. 훈련 전 5~10분 가동성 루틴을 습관화하세요.'},
+    asym: {ic:'⚖️',title:'좌우 불균형 보완', body:'불가리안 스플릿 스쿼트, 싱글레그 레그프레스, 싱글레그 데드리프트 등 편측 운동으로 약한 쪽을 우선 강화하세요. 편측 운동은 항상 약한 쪽부터 시작하고, 강한 쪽은 약한 쪽이 수행한 만큼만 반복해 좌우 차이를 좁힙니다. 주 2회, 각 10~12회×3세트.'},
+    lockout: {ic:'⚠️',title:'락아웃 주의', body:'레그프레스 상승 시 무릎을 완전히 펴지 말고 약 5~10° 굽힌 상태에서 멈추는 큐잉을 반복 연습하세요. 무릎을 끝까지 펴면 관절에 체중이 그대로 실려 부상 위험이 커집니다. 가벼운 중량으로 "천천히 밀고, 끝에서 살짝 남기기"를 10회×3세트 연습합니다.'},
+    speed: {ic:'⏱️',title:'템포 컨트롤 훈련', body:'하강이 빠르거나 반동을 쓰는 패턴이 감지되었습니다. 템포 스쿼트(3초 하강-1초 정지-1초 상승, 3-1-1 템포)로 신장성 구간을 통제하는 훈련을 하세요. 중량은 평소의 60~70%로 낮추고, 정확한 속도 유지에 집중합니다. 주 1~2회, 6~8회×3세트.'},
+    general_low: {ic:'💪',title:'기초 근력 강화', body:'맨몸 스쿼트, 힙 브릿지, 밴드 레그프레스 대체 동작으로 기초 체력을 쌓은 뒤 점진적으로 중량을 늘려가세요(점진적 과부하 원리). 처음 4주는 자세 습득에 집중하고, 이후 매주 2.5~5kg씩 소폭 증량합니다.'},
+    ratio_low: {ic:'🔵',title:'레그프레스 병행', body:'스쿼트 대비 레그프레스 기록이 낮은 편입니다. 머신 기반의 안전한 고중량 자극을 위해 레그프레스 세트를 보강해보세요. 스쿼트 후 보조 운동으로 레그프레스 8~12회×3세트를 배치하면 하체 전체 볼륨을 안전하게 늘릴 수 있습니다.'},
+    ratio_high: {ic:'🟠',title:'코어·스쿼트 숙련도 보강', body:'레그프레스 대비 스쿼트 기록이 낮은 편입니다. 플랭크·데드버그·팔로프 프레스 등 코어 안정화 운동(주 3회, 각 30초~12회×3세트)과 맨몸/저중량 스쿼트 반복으로 자유중량 숙련도를 높여보세요. 코어가 안정되면 같은 하체 근력으로도 스쿼트 중량이 올라갑니다.'},
+    warmup: {ic:'🔥',title:'준비운동·정리운동 (공통)', body:'본 운동 전: 가벼운 유산소 5분 → 다이나믹 스트레칭(레그 스윙, 힙 서클) → 본 종목을 빈 바/가벼운 중량으로 10회×2세트 워밍업. 본 운동 후: 정적 스트레칭(대퇴사두근·햄스트링·둔근 각 20~30초)으로 마무리해 회복을 돕습니다.'},
+    recovery: {ic:'😴',title:'회복·빈도 관리 (공통)', body:'같은 부위의 고강도 훈련 사이에는 48~72시간의 회복 시간을 두세요. 하체 최대 근력 훈련은 주 2~3회가 적정하며, 수면 7시간 이상과 충분한 단백질 섭취(체중 1kg당 약 1.6g)가 근력 향상의 기본 조건입니다.'}
+  };
+
+  // 수준별 세트·강도 처방 (%1RM 기준)
+  const LEVEL_PLAN = {
+    '입문':      [['근력 기초', '50~60% 1RM', '10~12회 × 3세트', '90초', '주 2회', '자세 습득 최우선, 증량은 천천히']],
+    '초급~중급': [['근비대', '65~75% 1RM', '8~10회 × 3~4세트', '90초~2분', '주 2~3회', '볼륨 중심으로 근육량 확보'],
+                  ['근력', '80~85% 1RM', '4~6회 × 3세트', '2~3분', '주 1회', '주 1회 고중량 노출로 신경계 적응']],
+    '중급~상급': [['근력', '80~90% 1RM', '3~5회 × 4~5세트', '3분', '주 2회', '고중량 저반복 중심'],
+                  ['근비대 유지', '70~75% 1RM', '8~10회 × 3세트', '90초', '주 1회', '보조일에 볼륨 유지']],
+    '상급 이상': [['최대 근력', '85~95% 1RM', '1~3회 × 4~6세트', '3~5분', '주 1~2회', '주기화(피리어다이제이션) 적용 권장'],
+                  ['보조·약점 보완', '65~75% 1RM', '8~12회 × 3세트', '90초', '주 1~2회', '편측·코어 등 약점 부위 집중']]
+  };
+  function renderLevelPlan(sqLevel, lpLevel){
+    // 두 종목 중 더 낮은 수준을 기준으로 처방
+    const order = ['입문','초급~중급','중급~상급','상급 이상'];
+    const level = order[Math.min(order.indexOf(sqLevel), order.indexOf(lpLevel))];
+    const rows = LEVEL_PLAN[level].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
+    return `<h3 class="sub-heading">수준별 트레이닝 처방 — 현재 수준: <b style="color:var(--accent);">${level}</b></h3>
+      <table class="plan-table">
+        <thead><tr><th>목적</th><th>강도</th><th>세트×반복</th><th>휴식</th><th>빈도</th><th>비고</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+  function renderWeekPlan(sqLevel, lpLevel){
+    const order = ['입문','초급~중급','중급~상급','상급 이상'];
+    const level = order[Math.min(order.indexOf(sqLevel), order.indexOf(lpLevel))];
+    let days;
+    if(level === '입문') days = [
+      ['월','맨몸 스쿼트 + 힙 브릿지 + 코어 (기술 연습)'],
+      ['수','휴식 또는 가벼운 유산소 20~30분'],
+      ['금','레그프레스(가벼운 중량) + 밴드 보강 운동'],
+      ['주말','휴식 · 스트레칭']
+    ];
+    else if(level === '초급~중급') days = [
+      ['월','스쿼트 근비대(8~10회×4세트) + 보조(런지·레그컬)'],
+      ['수','상체 또는 휴식'],
+      ['금','레그프레스 중심 볼륨 + 코어'],
+      ['토','스쿼트 고중량(4~6회×3세트) — 격주 권장']
+    ];
+    else days = [
+      ['월','스쿼트 고중량(3~5회×5세트) + 보조'],
+      ['화','상체 / 코어'],
+      ['목','레그프레스 볼륨 + 편측 보강'],
+      ['토','스쿼트 중강도 기술일(70~75%) + 가동성']
+    ];
+    const rows = days.map(d=>`<tr><td>${d[0]}</td><td>${d[1]}</td></tr>`).join('');
+    return `<h3 class="sub-heading" style="margin-top:16px;">주간 훈련 배치 예시</h3>
+      <table class="plan-table"><thead><tr><th>요일</th><th>내용</th></tr></thead><tbody>${rows}</tbody></table>
+      <p class="hint" style="margin-top:8px;">* 예시 배치이며, 개인 일정·회복 상태에 맞게 요일을 조정하세요. 통증이 있으면 즉시 중단하고 전문가와 상담하세요.</p>`;
+  }
+
+  function renderPrescription(rec, ctx){
+    const items = [];
+    const flagText = (a)=> a ? a.reasons.join(' ') : '';
+    const allReasons = flagText(ctx.sqA) + ' ' + flagText(ctx.lpA);
+    if(allReasons.includes('Valgus') || allReasons.includes('안쪽')) items.push(RX_LIBRARY.valgus);
+    if(allReasons.includes('가동범위') || allReasons.includes('깊이')) items.push(RX_LIBRARY.depth);
+    if(allReasons.includes('비대칭')) items.push(RX_LIBRARY.asym);
+    if(allReasons.includes('락아웃')) items.push(RX_LIBRARY.lockout);
+    if(allReasons.includes('속도') || allReasons.includes('반동')) items.push(RX_LIBRARY.speed);
+    if(ctx.sqLevel === '입문' || ctx.lpLevel === '입문') items.push(RX_LIBRARY.general_low);
+    if(ctx.ratio < 1.5) items.push(RX_LIBRARY.ratio_low);
+    if(ctx.ratio > 2.0) items.push(RX_LIBRARY.ratio_high);
+    if(!items.length) items.push({ic:'✅',title:'현재 상태 유지', body:'현재 기록과 자세 모두 양호합니다. 점진적 과부하 원리에 따라 중량을 조금씩 늘리며 동일한 자세 기준을 유지하세요.'});
+    // 공통 처방은 항상 포함
+    items.push(RX_LIBRARY.warmup, RX_LIBRARY.recovery);
+
+    document.getElementById('rxCard').style.display = 'block';
+    document.getElementById('rxLevelPlan').innerHTML = renderLevelPlan(ctx.sqLevel, ctx.lpLevel);
+    document.getElementById('rxList').innerHTML = items.map(r=>`
+      <div class="rx-card"><div class="ic">${r.ic}</div><div><h4>${r.title}</h4><p>${r.body}</p></div></div>
+    `).join('');
+    document.getElementById('rxWeekPlan').innerHTML = renderWeekPlan(ctx.sqLevel, ctx.lpLevel);
+  }
+
+  /* =================================================================
+     TAB 5 — 종합 결과 (탭 1~4 요약)
+  ================================================================= */
+  async function loadSummary(){
+    const loader = document.getElementById('summaryLoader');
+    const wrap = document.getElementById('summaryWrap');
+    loader.classList.add('show');
+
+    let profile = null, body = null, records = [], lpA = null, sqA = null;
+    try{ profile = JSON.parse(await sGet('profile:current', false) || 'null'); }catch(e){}
+    try{ body = JSON.parse(await sGet('profile:body', false) || 'null'); }catch(e){}
+    try{ records = JSON.parse(await sGet('my-records', false) || '[]'); }catch(e){}
+    try{ lpA = JSON.parse(await sGet('analysis:legpress', false) || 'null'); }catch(e){}
+    try{ sqA = JSON.parse(await sGet('analysis:squat', false) || 'null'); }catch(e){}
+    loader.classList.remove('show');
+
+    const latest = records.length ? records[records.length-1] : null;
+    const secs = [];
+
+    // 01 정보입력
+    secs.push(`<div class="sum-sec"><h3><span class="num">01</span>기본 정보</h3>
+      ${profile
+        ? `<p><b>${escapeHtml(profile.name)}</b> · 만 ${profile.age}세 · ${profile.gender==='여'?'여성':'남성'}${body&&body.height?` · 신장 ${body.height}cm`:''}${body&&body.weight?` · 체중 ${body.weight}kg`:''}</p>`
+        : `<p>저장된 정보가 없습니다. [01 정보입력] 탭에서 이름·나이·성별을 저장해주세요.</p>`}
+    </div>`);
+
+    // 02 자세분석
+    const poseLine = (label, a)=>{
+      if(!a) return `<p><b>${label}</b> — 아직 분석 기록이 없습니다.</p>`;
+      const ok = a.verdict === '인정';
+      const detail = ok ? '관절 각도·동작 속도 모두 기준 충족' : escapeHtml((a.reasons||[]).slice(0,3).join(' / '));
+      return `<p><b>${label}</b> — <span style="color:${ok?'var(--accent-green)':'var(--danger)'};font-weight:700;">${a.verdict}</span> · ${detail}</p>`;
+    };
+    secs.push(`<div class="sum-sec"><h3><span class="num">02</span>자세분석 (AI 관절 인식)</h3>
+      ${poseLine('레그프레스', lpA)}
+      ${poseLine('스쿼트', sqA)}
+    </div>`);
+
+    // 03 기록·등급
+    if(latest){
+      const lpGrade = latest.lpGrade || (latest.weight ? lpGradeFromRatio(latest.gender, latest.legpress/latest.weight) : null);
+      const sqGrade = latest.sqGrade || (latest.weight ? squatGradeFromRow(nearestSquatRow(latest.gender, latest.weight), latest.squat) : null);
+      secs.push(`<div class="sum-sec"><h3><span class="num">03</span>1RM 기록 · 등급</h3>
+        <div class="sum-kv">
+          <div class="angle-tile"><div class="k">레그프레스 1RM</div><div class="v">${latest.legpress}kg</div></div>
+          <div class="angle-tile"><div class="k">스쿼트 1RM</div><div class="v">${latest.squat}kg</div></div>
+          <div class="angle-tile"><div class="k">측정 시 체중</div><div class="v">${latest.weight || '-'}kg</div></div>
+        </div>
+        <p style="margin-top:10px;">
+          레그프레스 ${lpGrade ? `<b>${GRADE_NAMES[lpGrade]}</b>` : '등급 미산정'} ·
+          스쿼트 ${sqGrade ? `<b>${GRADE_NAMES[sqGrade]} (${SQ_TIER_NAMES[sqGrade]})</b>` : '등급 미산정'}<br>
+          <span style="font-size:11px;color:var(--text-faint);">${new Date(latest.savedAt).toLocaleString('ko-KR')} 저장 · 총 ${records.length}회 측정</span>
+        </p>
+      </div>`);
+    } else {
+      secs.push(`<div class="sum-sec"><h3><span class="num">03</span>1RM 기록 · 등급</h3>
+        <p>저장된 기록이 없습니다. [03 기록·등급] 탭에서 1RM을 입력하고 저장해주세요.</p></div>`);
+    }
+
+    // 04 비교분석
+    if(latest){
+      const ratio = latest.legpress / latest.squat;
+      let ratioNote;
+      if(ratio < 1.5) ratioNote = '스쿼트 상대 기록이 높은 편 — 코어·균형 능력 우수 가능성';
+      else if(ratio > 2.0) ratioNote = '레그프레스 상대 기록이 높은 편 — 코어 안정성·스쿼트 숙련도 보강 권장';
+      else ratioNote = '참고 범위(1.5~2.0배) 내 — 두 종목 간 균형적 발달';
+      let levelLine = '';
+      if(body && body.weight){
+        const sqLevel = strengthLevel('squat', latest.gender, latest.squat/body.weight);
+        const lpLevel = strengthLevel('legpress', latest.gender, latest.legpress/body.weight);
+        levelLine = `<br>체중 대비 수준: 스쿼트 <b>${sqLevel}</b> · 레그프레스 <b>${lpLevel}</b>`;
+      }
+      secs.push(`<div class="sum-sec"><h3><span class="num">04</span>비교분석 · 운동처방</h3>
+        <p>레그프레스÷스쿼트 배율 <b>${ratio.toFixed(2)}×</b> — ${ratioNote}${levelLine}<br>
+        <span style="font-size:11.5px;color:var(--text-faint);">세부 운동처방(수준별 세트·강도, 주간 배치)은 [04 비교분석] 탭에서 [편차 분석하기] 실행 후 확인할 수 있습니다.</span></p>
+      </div>`);
+    } else {
+      secs.push(`<div class="sum-sec"><h3><span class="num">04</span>비교분석 · 운동처방</h3>
+        <p>기록 저장 후 비교분석 결과가 이곳에 요약됩니다.</p></div>`);
+    }
+
+    // 종합 코멘트
+    if(profile && latest){
+      const poseOk = (lpA && lpA.verdict==='인정') && (sqA && sqA.verdict==='인정');
+      const poseDone = lpA || sqA;
+      let comment;
+      if(poseOk) comment = '자세와 기록 모두 안정적으로 측정되었습니다. 현재 자세 기준을 유지하며 점진적으로 중량을 늘려가세요.';
+      else if(poseDone) comment = '기록은 저장되었지만 자세분석에서 개선점이 발견되었습니다. [04 비교분석] 탭의 운동처방을 참고해 자세를 먼저 교정한 뒤 중량을 올리는 것을 권장합니다.';
+      else comment = '기록이 저장되었습니다. [02 자세분석] 탭에서 AI 자세분석까지 완료하면 더 정확한 종합 평가와 운동처방을 받을 수 있습니다.';
+      secs.push(`<div class="analysis-box"><b>종합 소견</b> — ${comment}</div>`);
+    }
+
+    wrap.innerHTML = secs.join('');
+  }
+  document.getElementById('refreshSummaryBtn').addEventListener('click', loadSummary);
+
+  /* =================================================================
+     TAB 6 — 통계
+  ================================================================= */
+  function mean(arr){ return arr.reduce((a,b)=>a+b,0) / arr.length; }
+  function stdev(arr){
+    if(arr.length < 2) return 0;
+    const m = mean(arr);
+    return Math.sqrt(arr.reduce((s,v)=> s + Math.pow(v-m,2), 0) / arr.length);
+  }
+
+  async function loadStdevExample(){
+    const tilesEl = document.getElementById('stdevExampleTiles');
+    const textEl = document.getElementById('stdevExampleText');
+    const loader = document.getElementById('stdevExampleLoader');
+    loader.classList.add('show');
+    const keys = await sList('record2:', true);
+    const records = [];
+    for(const k of keys){ const raw = await sGet(k, true); if(raw){ try{ records.push(JSON.parse(raw)); }catch(e){} } }
+    loader.classList.remove('show');
+    if(records.length < 2){
+      tilesEl.innerHTML = '';
+      textEl.style.display = 'block';
+      textEl.innerHTML = `아직 공유 기록이 ${records.length}건뿐이라 표준편차를 계산하기엔 데이터가 부족합니다. 예시로, 일반적인 체육측정 현장에서는 레그프레스가 대략 <b>±30~50kg</b>, 스쿼트가 대략 <b>±15~25kg</b> 정도의 표준편차를 보이는 경우가 많습니다(참고용 예시 수치). [03 기록·등급] 탭에서 기록을 저장하면 실제 데이터로 계산됩니다.`;
+      return;
+    }
+    const lpVals = records.map(r=>r.legpress), sqVals = records.map(r=>r.squat);
+    const lpMean = mean(lpVals), sqMean = mean(sqVals), lpStd = stdev(lpVals), sqStd = stdev(sqVals);
+    tilesEl.innerHTML = `
+      <div class="stat-tile"><div class="k">레그프레스 평균</div><div class="v accent">${lpMean.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">레그프레스 표준편차</div><div class="v accent">±${lpStd.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">스쿼트 평균</div><div class="v blue">${sqMean.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">스쿼트 표준편차</div><div class="v blue">±${sqStd.toFixed(1)}kg</div></div>`;
+    const diff = Math.abs(lpStd - sqStd);
+    textEl.style.display = 'block';
+    textEl.innerHTML = `현재 ${records.length}건의 공유 기록 기준, 레그프레스 표준편차는 <b>±${lpStd.toFixed(1)}kg</b>, 스쿼트 표준편차는 <b>±${sqStd.toFixed(1)}kg</b>로 두 종목의 편차 차이는 약 <b>${diff.toFixed(1)}kg</b>입니다. 레그프레스는 궤적이 고정되어 초보자도 고중량을 다룰 수 있어 사람마다 기록차(표준편차)가 더 크게 나타나는 경향이 있습니다.`;
+  }
+  function renderGenderStats(records, tilesElId, tableWrapId){
+    const tilesEl = document.getElementById(tilesElId);
+    const tableWrapEl = document.getElementById(tableWrapId);
+    if(!records.length){ tilesEl.innerHTML=''; tableWrapEl.innerHTML = '<div class="empty-state">아직 저장된 기록이 없습니다.</div>'; return; }
+    const lpVals = records.map(r=>r.legpress), sqVals = records.map(r=>r.squat);
+    const lpMean = mean(lpVals), sqMean = mean(sqVals), lpStd = stdev(lpVals), sqStd = stdev(sqVals);
+    tilesEl.innerHTML = `
+      <div class="stat-tile"><div class="k">기록 수</div><div class="v">${records.length}건</div></div>
+      <div class="stat-tile"><div class="k">레그프레스 평균</div><div class="v accent">${lpMean.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">스쿼트 평균</div><div class="v blue">${sqMean.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">레그프레스 표준편차</div><div class="v accent">±${lpStd.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">스쿼트 표준편차</div><div class="v blue">±${sqStd.toFixed(1)}kg</div></div>
+      <div class="stat-tile"><div class="k">평균 배율(LP÷SQ)</div><div class="v">${(lpMean/sqMean).toFixed(2)}×</div></div>`;
+    const sorted = [...records].sort((a,b)=>b.savedAt-a.savedAt).slice(0,15);
+    const rows = sorted.map(r=>`<tr><td class="nm">${escapeHtml(r.name)}</td><td>${r.age}세</td><td>${r.legpress}kg</td><td>${r.squat}kg</td></tr>`).join('');
+    tableWrapEl.innerHTML = `<table class="rec-table"><thead><tr><th>이름</th><th>나이</th><th>레그프레스</th><th>스쿼트</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+  async function loadStats(){
+    const loader = document.getElementById('statsLoader');
+    const diagEl = document.getElementById('storageDiagMsg');
+    loader.classList.add('show');
+    const diag = await storageSelfTest();
+    const keys = await sList('record2:', true);
+    const records = [];
+    for(const k of keys){ const raw = await sGet(k, true); if(raw){ try{ records.push(JSON.parse(raw)); }catch(e){} } }
+    loader.classList.remove('show');
+    renderGenderStats(records.filter(r=>r.gender==='여'), 'femaleTiles', 'femaleTableWrap');
+    renderGenderStats(records.filter(r=>r.gender!=='여'), 'maleTiles', 'maleTableWrap');
+
+    if(!diag.ok){
+      diagEl.textContent = '⚠ 저장소 연결에 문제가 있습니다. 이 아티팩트가 아직 "게시(Publish)"되지 않았다면 저장이 되지 않는 것이 정상입니다 — 먼저 게시한 뒤 그 링크에서 다시 기록해주세요.';
+      diagEl.className = 'status-msg show status-err';
+    } else if(diag.mode === 'cloud' && records.length === 0){
+      diagEl.textContent = 'ℹ 저장소 연결은 정상이지만 아직 공유 통계에 저장된 기록이 없습니다. [03 기록·등급] 탭에서 [기록 저장]을 눌러 기록을 남겨보세요.';
+      diagEl.className = 'status-msg show status-ok';
+    } else {
+      diagEl.className = 'status-msg';
+    }
+  }
+  document.getElementById('refreshStatsBtn').addEventListener('click', loadStats);
+
+  document.getElementById('resetAllBtn').addEventListener('click', async ()=>{
+    if(!confirm('이 기기에 저장된 이름·나이·성별·개인 기록·자세분석 결과를 모두 삭제할까요? (공유 통계는 삭제되지 않습니다)')) return;
+    await sDelete('profile:current', false);
+    await sDelete('profile:body', false);
+    await sDelete('my-records', false);
+    await sDelete('analysis:legpress', false);
+    await sDelete('analysis:squat', false);
+    location.reload();
+  });
+
+  /* ---------------- init ---------------- */
+  (async function init(){
+    await loadProfileIntoForm();
+    try{
+      const bodyRaw = await sGet('profile:body', false);
+      if(bodyRaw){
+        const body = JSON.parse(bodyRaw);
+        if(body.weight){ document.getElementById('inGradeWeight').value = body.weight; document.getElementById('inWeight').value = body.weight; }
+        if(body.height){ document.getElementById('inHeight').value = body.height; }
+      }
+    }catch(e){}
+  })();
+
+})();
+</script>
+</body>
+</html>
