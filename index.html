@@ -547,15 +547,22 @@
      관리자의 구글 시트(드라이브)에 개인별로 자동 기록됩니다.
      비워두면(기본값) 아무 것도 전송하지 않습니다.
   ================================================================= */
-  const DRIVE_LOG_URL = 'https://script.google.com/macros/s/AKfycbxM82wa26qm4qa6ieSUDIu3xFdLVLatHJ-iCthSu4CToyv8EPh48OekGyLM0qaqDH_K/exec'; // 예: 'https://script.google.com/macros/s/XXXX/exec'
+  const DRIVE_LOG_URL = 'https://script.google.com/macros/s/AKfycbyj8xuRLGZZtG1OFlYyzYFvg8yutuspbVFOndgC9YTVjP6aet0SU0raQa6PD9DfRAi4/exec'; // 예: 'https://script.google.com/macros/s/XXXX/exec'
   let _logName = '';
   function driveLog(event, detail){
     if(!DRIVE_LOG_URL) return;
     try{
+      let d = detail || '';
+      if(typeof d === 'object'){
+        d = Object.entries(d).map(([k,v])=>{
+          if(Array.isArray(v)) v = v.length ? v.join(' / ') : '없음';
+          return `${k}: ${v}`;
+        }).join('  ·  ');
+      }
       fetch(DRIVE_LOG_URL, {
         method:'POST', mode:'no-cors',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({ time:new Date().toISOString(), name:_logName || '이름미입력', event, detail: detail || {} })
+        body: JSON.stringify({ time:new Date().toLocaleString('ko-KR'), name:_logName || '이름미입력', event, detail: d })
       });
     }catch(e){}
   }
@@ -1053,9 +1060,17 @@
       }
       renderVerdict(result);
       sSet(`analysis:${lift}`, JSON.stringify(result), false);
-      driveLog('자세분석 완료', {종목: lift==='legpress'?'레그프레스':'스쿼트', 판정: result.verdict, 사유: result.reasons,
-        하강최저무릎각: Math.round((result.bottom.kneeAngleL+result.bottom.kneeAngleR)/2),
-        상승최대무릎각: Math.round((result.top.kneeAngleL+result.top.kneeAngleR)/2)});
+      const _m = result.motion || {};
+      driveLog('자세분석 완료', {종목: lift==='legpress'?'레그프레스':'스쿼트', 판정: result.verdict,
+        '불인정 사유': result.reasons.length ? result.reasons : ['없음 (모든 기준 충족)'],
+        '하강 최저 무릎각(좌/우)': `${(result.bottom.kneeAngleL||0).toFixed(0)}° / ${(result.bottom.kneeAngleR||0).toFixed(0)}°`,
+        '상승 최대 무릎각(좌/우)': `${(result.top.kneeAngleL||0).toFixed(0)}° / ${(result.top.kneeAngleR||0).toFixed(0)}°`,
+        '하강 최대 속도': `${(_m.maxEccVel||0).toFixed(0)}°/s`,
+        '상승 최대 속도': `${(_m.maxConVel||0).toFixed(0)}°/s`,
+        '좌우 비대칭 최대': `${(_m.maxAsym||0).toFixed(0)}°`,
+        'Valgus 감지 구간': `${((_m.valgusRatio||0)*100).toFixed(0)}%`,
+        '상체 기울기 최대': `${(_m.maxLean||0).toFixed(0)}°`,
+        '분석 프레임 수': _m.frameCount||0});
       showCamStatus('✓ 자세분석이 완료되어 결과가 저장되었습니다.', true);
     }
 
@@ -1360,7 +1375,8 @@
     await sSet('my-records', JSON.stringify(myList), false);
 
     const sharedOk = await sSet('record2:'+id, JSON.stringify(record), true);
-    driveLog('1RM 기록 저장', {레그프레스kg: lp, 스쿼트kg: sq, 몸무게kg: bw, 레그프레스등급: lpGrade+'등급', 스쿼트등급: sqGrade+'등급'});
+    driveLog('1RM 기록 저장', {'레그프레스 1RM': lp+'kg ('+lpGrade+'등급)', '스쿼트 1RM': sq+'kg ('+sqGrade+'등급)', 몸무게: bw+'kg',
+      '레그프레스÷체중': (lp/bw).toFixed(2)+'×', '스쿼트÷체중': (sq/bw).toFixed(2)+'×', '레그프레스÷스쿼트 배율': (lp/sq).toFixed(2)+'×'});
 
     loader.classList.remove('show');
     showStatus(
@@ -1482,6 +1498,9 @@
       ${jointNote}`;
 
     renderPrescription(rec, {sqA, lpA, ratio, sqBW, lpBW, sqLevel, lpLevel});
+    driveLog('편차 분석·운동처방', {신장: height+'cm', 체중: weight+'kg', BMI: bmi,
+      '레그프레스÷스쿼트': ratio.toFixed(2)+'×', '스쿼트÷체중': sqBW.toFixed(2)+'× ('+sqLevel+')', '레그프레스÷체중': lpBW.toFixed(2)+'× ('+lpLevel+')',
+      배율소견: verdict+' '+reason});
     showStatus(bodyStatus, '분석이 완료되었습니다.', true);
   });
 
