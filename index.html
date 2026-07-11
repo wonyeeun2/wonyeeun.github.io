@@ -100,10 +100,10 @@
   .analyze-progress{display:none;margin-top:10px;height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden;}
   .analyze-progress.show{display:block;}
   .analyze-progress .bar{height:100%;width:0;background:var(--accent);transition:width .15s;}
-  .motion-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-  .motion-btns .btn{flex:1;min-width:110px;}
-  .motion-btns label.btn{display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .btn-analyze{display:block;width:100%;margin-top:8px;}
+  .motion-btns,.live-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .motion-btns .btn,.live-btns .btn{flex:1 1 0;min-width:110px;min-height:44px;box-sizing:border-box;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:6px 8px;font-size:12px;line-height:1.3;}
+  .motion-btns label.btn{cursor:pointer;}
 
   /* ---- 반복 판정 방식 3칸 요약 ---- */
   .rep-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
@@ -259,9 +259,6 @@
   .mode-toggle button .sub{display:block;font-weight:500;font-size:10px;color:var(--text-faint);margin-top:2px;}
   .mode-panel{display:none;}
   .mode-panel.show{display:block;}
-  .live-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-  .live-btns .btn{flex:1;min-width:110px;}
-
   .hud-chip.phase{min-width:40px;text-align:center;background:rgba(0,0,0,.72);}
   .hud-chip.phase.phase-down{background:rgba(79,169,232,.88);border-color:#4FA9E8;}
   .hud-chip.phase.phase-up{background:rgba(255,138,99,.88);border-color:#FF8A63;}
@@ -819,18 +816,16 @@
         <input type="file" id="${prefix}-fileInput" accept="video/*" style="display:none">
         <div class="motion-btns">
           <label class="btn btn-ghost" for="${prefix}-fileInput">영상파일선택</label>
-          <button class="btn btn-blue btn-analyze" id="${prefix}-startBtn" disabled>AI 관절 분석 시작</button>
-          <button class="btn btn-danger" id="${prefix}-stopBtn" disabled>분석종료</button>
-          <button class="btn btn-ghost" id="${prefix}-resetBtn">리셋</button>
+          <button class="btn btn-blue" id="${prefix}-startBtn" disabled>AI 관절 분석 시작</button>
+          <button class="btn btn-ghost" id="${prefix}-resetBtn">초기화</button>
         </div>
       </div>
 
       <div class="mode-panel" id="${prefix}-livePanel">
-        <p class="hint" style="margin:0 0 10px;">카메라와 <b>세로 측면 45°</b>가 되도록 서서 시작 버튼을 누르세요. 반복을 마쳤으면 <b>[분석종료 판정]</b>을 눌러 결과를 확인합니다.</p>
+        <p class="hint" style="margin:0 0 10px;">카메라와 <b>세로 측면 45°</b>가 되도록 서서 시작 버튼을 누르세요. 반복을 마쳤으면 같은 버튼을 다시 눌러 <b>분석·판정</b>을 시작합니다.</p>
         <div class="live-btns">
           <button class="btn btn-blue" id="${prefix}-liveStartBtn">AI 관절 분석 시작</button>
-          <button class="btn btn-danger" id="${prefix}-liveStopBtn" disabled>분석종료 판정</button>
-          <button class="btn btn-ghost" id="${prefix}-liveResetBtn">리셋</button>
+          <button class="btn btn-ghost" id="${prefix}-liveResetBtn">초기화</button>
         </div>
       </div>
 
@@ -874,7 +869,8 @@
       frames:[], repPhase:'wait', repCur:null, reps:[], minKnee:Infinity
     };
     let mode = 'upload';
-    let liveStream = null, liveRunning = false, liveRaf = null, sparkBuf = [];
+    let liveStream = null, liveRunning = false, sparkBuf = [];
+    let mediaRecorder = null, liveChunks = [], liveRecordedUrl = null;
 
     // 반복(rep) 단위로 동작을 나누어 추적 — 실제 감지된 반복 구간만 판정에 사용
     function newRepAccumulator(){
@@ -1030,7 +1026,6 @@
             ? `영상 준비 완료 (약 ${Math.round(dur)}초). ${MAX_ANALYZE_SEC}초를 넘는 영상은 처음 ${MAX_ANALYZE_SEC}초까지만 분석됩니다. 'AI 관절 분석 시작'을 눌러주세요.`
             : `영상 준비 완료 (약 ${Math.round(dur)}초). 'AI 관절 분석 시작'을 눌러주세요.`, 'ok');
           el('startBtn').disabled = false;
-          el('stopBtn').disabled = true;
           driveLog('영상 업로드', {종목: lift==='legpress'?'레그프레스':'스쿼트', 파일명: f.name});
         }catch(e){
           setStatus('AI 모델을 불러오지 못했습니다 (네트워크 문제일 수 있어요). 잠시 후 다시 시도해주세요.', 'down');
@@ -1092,17 +1087,6 @@
       state.frames.push(f);
       trackRep(f);
       return f;
-    }
-
-    /* ---------- 시크(seek) 기반 프레임 단위 분석 ---------- */
-    function seekTo(t){
-      const video = el('video');
-      return new Promise(resolve=>{
-        if(Math.abs(video.currentTime - t) < 0.001){ resolve(); return; }
-        const handler = ()=>{ video.removeEventListener('seeked', handler); resolve(); };
-        video.addEventListener('seeked', handler);
-        try{ video.currentTime = t; }catch(e){ resolve(); }
-      });
     }
 
     function processFrameAt(){
@@ -1168,34 +1152,52 @@
       state.frames = [];
       resetRepTracking();
       el('startBtn').disabled = true;
-      el('stopBtn').disabled = false;
       el('verdictBox').innerHTML = '';
       el('capBox').classList.remove('show'); el('capList').innerHTML='';
       const prog = el('prog'), bar = el('progBar');
       prog.classList.add('show'); bar.style.width = '0%';
 
-      video.pause();
       fitCanvas();
       const rawDur = video.duration || 0;
       const endT = Math.max(0, Math.min(rawDur, MAX_ANALYZE_SEC));
       setStatus(rawDur > MAX_ANALYZE_SEC
-        ? `영상이 약 ${Math.round(rawDur)}초입니다. 처음 ${MAX_ANALYZE_SEC}초까지 프레임 단위로 분석합니다...`
-        : '분석 중... 프레임을 한 장씩 짚어가며 끝까지 확인합니다.');
+        ? `영상이 약 ${Math.round(rawDur)}초입니다. 화면을 그대로 재생하며 처음 ${MAX_ANALYZE_SEC}초까지 분석합니다...`
+        : '영상을 그대로 재생하며 분석 중입니다...');
 
-      let t = 0;
-      while(t <= endT + 0.0001){
-        if(state.aborted) break;
-        const clamped = Math.min(t, endT);
-        await seekTo(clamped);
-        if(state.aborted) break;
-        processFrameAt();
-        if(endT > 0) bar.style.width = Math.min(100, Math.round((clamped/endT)*100)) + '%';
-        t += STEP_SEC;
-      }
+      // 영상을 멈춰 세워가며(seek) 분석하면 일부 기기·브라우저에서 'seeked' 이벤트가
+      // 제때 오지 않아 화면이 그대로 멈춘 것처럼(다운된 것처럼) 보이는 문제가 있었다.
+      // 그래서 영상을 화면에 그대로 재생시켜 놓고, 재생되는 동안 일정 간격으로
+      // 프레임을 샘플링하는 방식으로 바꿨다 — 영상/카메라 화면이 항상 정상적으로 보인다.
+      try{ video.currentTime = 0; }catch(e){}
+      await new Promise((resolve)=>{
+        if(video.readyState >= 2){ resolve(); return; }
+        const h = ()=>{ video.removeEventListener('seeked', h); resolve(); };
+        video.addEventListener('seeked', h);
+        setTimeout(resolve, 500);
+      });
+      try{ await video.play(); }
+      catch(e){ setStatus('영상 재생을 시작하지 못했습니다. 화면을 한 번 탭한 뒤 다시 시도해주세요.', 'down'); state.analyzing = false; el('startBtn').disabled = false; return; }
+
+      let lastT = -Infinity;
+      await new Promise((resolve)=>{
+        function loop(){
+          if(state.aborted){ resolve(); return; }
+          const now = video.currentTime;
+          if(video.ended || now >= endT){ resolve(); return; }
+          if(now - lastT >= STEP_SEC){
+            lastT = now;
+            processFrameAt();
+            if(endT > 0) bar.style.width = Math.min(100, Math.round((now/endT)*100)) + '%';
+          }
+          requestAnimationFrame(loop);
+        }
+        requestAnimationFrame(loop);
+      });
+      video.pause();
+
       bar.style.width = '100%';
       state.analyzing = false;
       el('startBtn').disabled = false;
-      el('stopBtn').disabled = true;
       if(state.aborted){
         setStatus("분석이 중단되었습니다. 다시 분석하려면 'AI 관절 분석 시작'을 눌러주세요.");
         return;
@@ -1280,14 +1282,27 @@
     }
 
     /* ---------- 실시간 녹화 분석 ---------- */
+    // 녹화 중에는 실시간 프레임 분석(추론)을 전혀 하지 않고 카메라 화면을 그대로 보여주기만 한다.
+    // [AI 관절 분석 시작] 버튼을 녹화 중 다시 누르면 녹화가 끝나고, 녹화된 영상을 업로드 영상과 동일하게
+    // "화면 그대로 재생하면서" 분석한다. 실시간 추론을 계속 돌리는 방식은 기기에 따라 부하가 커서
+    // 카메라 화면이 멈추거나 꺼지는(다운되는) 원인이 될 수 있어 이 구조로 바꿨다.
+    function pickRecorderMimeType(){
+      const candidates = ['video/webm;codecs=vp8,opus','video/webm;codecs=vp8','video/webm','video/mp4'];
+      if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+      for(const c of candidates){ if(MediaRecorder.isTypeSupported(c)) return c; }
+      return '';
+    }
+
     async function startLive(){
       if(liveRunning) return;
       if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
         setStatus('이 브라우저(또는 현재 접속 환경)에서는 카메라를 사용할 수 없습니다. HTTPS 주소로 접속했는지, 브라우저가 카메라를 지원하는지 확인 후 다시 시도해주세요.', 'down');
         return;
       }
-      try{ await ensurePose((m)=>setStatus(m)); }
-      catch(e){ setStatus('AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.', 'down'); return; }
+      if(!window.MediaRecorder){
+        setStatus('이 브라우저는 영상 녹화 기능(MediaRecorder)을 지원하지 않습니다. 최신 크롬·사파리 등에서 다시 시도해주세요.', 'down');
+        return;
+      }
       setStatus('카메라 접근을 시도하는 중...');
       let stream;
       try{ stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }); }
@@ -1295,6 +1310,7 @@
       liveStream = stream;
       const video = el('video');
       video.controls = false;
+      if(liveRecordedUrl){ URL.revokeObjectURL(liveRecordedUrl); liveRecordedUrl = null; }
       video.removeAttribute('src');
       video.srcObject = stream;
       video.muted = true; video.playsInline = true; video.setAttribute('playsinline', '');
@@ -1309,50 +1325,112 @@
       try{ await video.play(); }
       catch(e){ setStatus('카메라 화면 재생을 시작하지 못했습니다. 화면을 한 번 탭한 뒤 다시 시도해주세요.', 'down'); return; }
       fitCanvas();
-      state.srcReady = true;
-      state.aborted = false;
-      state.frames = [];
-      resetRepTracking();
-      sparkBuf = [];
-      el('verdictBox').innerHTML = '';
-      el('capBox').classList.remove('show'); el('capList').innerHTML = '';
+
+      liveChunks = [];
+      const mime = pickRecorderMimeType();
+      try{
+        mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      }catch(e){
+        setStatus('영상 녹화를 시작하지 못했습니다. 다른 브라우저에서 다시 시도해주세요.', 'down');
+        stream.getTracks().forEach(t=>t.stop());
+        liveStream = null;
+        return;
+      }
+      mediaRecorder.ondataavailable = (e)=>{ if(e.data && e.data.size > 0) liveChunks.push(e.data); };
+      mediaRecorder.start();
+
       liveRunning = true;
-      el('liveStartBtn').disabled = true;
-      el('liveStopBtn').disabled = false;
+      setLiveToggleUI(true);
       const rb = el('recBadge'); if(rb) rb.classList.add('show');
-      setStatus('세로 측면 45° 각도를 유지하며 반복 동작을 진행해주세요. 실시간으로 분석 중입니다...', 'ok');
-      let tick = 0;
-      const loop = ()=>{
-        if(!liveRunning) return;
-        tick++;
-        if(tick % 2 === 0) processFrameAt(); // 약 30fps 렌더 중 절반 빈도로 추론
-        liveRaf = requestAnimationFrame(loop);
-      };
-      loop();
+      setStatus('녹화 중입니다. 세로 측면 45° 각도를 유지하며 반복 동작을 진행한 뒤 같은 버튼을 다시 눌러 분석·판정을 시작하세요.', 'ok');
     }
 
-    function stopLive(){
-      liveRunning = false;
-      if(liveRaf) cancelAnimationFrame(liveRaf);
-      liveRaf = null;
+    // 시작/종료 버튼(liveStartBtn) 하나로 녹화 시작·종료를 겸하기 위한 라벨/스타일 토글
+    function setLiveToggleUI(recording, busy){
+      const btn = el('liveStartBtn');
+      if(busy){ btn.disabled = true; return; }
+      btn.disabled = false;
+      btn.textContent = recording ? '촬영 종료·분석 시작' : 'AI 관절 분석 시작';
+      btn.classList.toggle('btn-danger', recording);
+      btn.classList.toggle('btn-blue', !recording);
+    }
+
+    // 카메라 스트림/뱃지/버튼 상태만 정리 (녹화된 데이터는 건드리지 않음)
+    function stopLiveStreamOnly(){
       if(liveStream){ liveStream.getTracks().forEach(t=>t.stop()); liveStream = null; }
+      const rb = el('recBadge'); if(rb) rb.classList.remove('show');
+      setLiveToggleUI(false);
+    }
+
+    // 리셋 시: 녹화 중이면 즉시 중단하고 카메라도 완전히 끈다
+    function resetLive(){
+      liveRunning = false;
+      if(mediaRecorder && mediaRecorder.state !== 'inactive'){
+        try{ mediaRecorder.ondataavailable = null; mediaRecorder.stop(); }catch(e){}
+      }
+      mediaRecorder = null;
+      liveChunks = [];
+      if(liveRecordedUrl){ URL.revokeObjectURL(liveRecordedUrl); liveRecordedUrl = null; }
+      stopLiveStreamOnly();
       const video = el('video');
       video.pause(); video.srcObject = null;
-      el('liveStartBtn').disabled = false;
-      el('liveStopBtn').disabled = true;
-      const rb = el('recBadge'); if(rb) rb.classList.remove('show');
     }
 
-    function stopLiveAndJudge(){
-      if(!liveRunning){ return; }
-      stopLive();
-      finishAnalysis();
+    async function stopLiveAndJudge(){
+      if(!liveRunning) return;
+      liveRunning = false;
+      setLiveToggleUI(false, true); // 처리 중에는 버튼 비활성화
+      setStatus('녹화를 마무리하는 중입니다...');
+      const video = el('video');
+
+      await new Promise((resolve)=>{
+        if(!mediaRecorder || mediaRecorder.state === 'inactive'){ resolve(); return; }
+        mediaRecorder.addEventListener('stop', resolve, { once:true });
+        try{ mediaRecorder.stop(); }catch(e){ resolve(); }
+      });
+      if(liveStream){ liveStream.getTracks().forEach(t=>t.stop()); liveStream = null; }
+      const rb = el('recBadge'); if(rb) rb.classList.remove('show');
+
+      if(!liveChunks.length){
+        setStatus('녹화된 영상이 없습니다. [AI 관절 분석 시작]을 눌러 다시 녹화해주세요.', 'down');
+        setLiveToggleUI(false);
+        return;
+      }
+      const blob = new Blob(liveChunks, { type: (mediaRecorder && mediaRecorder.mimeType) || 'video/webm' });
+      liveChunks = [];
+      if(liveRecordedUrl) URL.revokeObjectURL(liveRecordedUrl);
+      liveRecordedUrl = URL.createObjectURL(blob);
+
+      video.srcObject = null;
+      video.src = liveRecordedUrl;
+      video.load();
+      setStatus('녹화된 영상을 불러오는 중...');
+
+      await new Promise((resolve)=>{
+        const onMeta = ()=>{ video.removeEventListener('loadedmetadata', onMeta); resolve(); };
+        video.addEventListener('loadedmetadata', onMeta);
+        setTimeout(resolve, 3000); // 안전장치
+      });
+      fitCanvas();
+      state.srcReady = true;
+      state.aborted = false;
+
+      try{ await ensurePose((m)=>setStatus(m)); }
+      catch(e){
+        setStatus('AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.', 'down');
+        setLiveToggleUI(false);
+        return;
+      }
+
+      setStatus('녹화가 끝났습니다. 녹화된 화면을 그대로 재생하며 자세를 분석합니다...', 'ok');
+      await startAnalysis();
+      setLiveToggleUI(false);
     }
 
     /* ---------- 업로드 / 실시간 모드 전환 ---------- */
     function setMode(next){
       if(mode === next) return;
-      if(liveRunning) stopLive();
+      resetLive();
       resetAll(true);
       mode = next;
       el('uploadPanel').classList.toggle('show', mode === 'upload');
@@ -1374,7 +1452,7 @@
       state.srcReady = false;
       state.frames = [];
       resetRepTracking();
-      if(liveRunning) stopLive();
+      resetLive();
       sparkBuf = [];
       const scv = el('sparkCanvas'); if(scv) scv.getContext('2d').clearRect(0,0,scv.width,scv.height);
       const video = el('video');
@@ -1390,7 +1468,6 @@
       el('capBox').classList.remove('show'); el('capList').innerHTML='';
       el('verdictBox').innerHTML = '';
       el('startBtn').disabled = true;
-      el('stopBtn').disabled = true;
       el('prog').classList.remove('show'); el('progBar').style.width='0%';
       if(clearStatus !== false) setStatus(mode === 'upload'
         ? '영상 파일을 선택하면 분석이 준비됩니다. 세로 측면 45°에서 촬영한 1분 이내 영상이면 정확도가 높아집니다.'
@@ -1398,10 +1475,12 @@
     }
 
     el('startBtn').addEventListener('click', startAnalysis);
-    el('stopBtn').addEventListener('click', ()=>{ state.aborted = true; });
     el('resetBtn').addEventListener('click', ()=> resetAll(true));
-    el('liveStartBtn').addEventListener('click', startLive);
-    el('liveStopBtn').addEventListener('click', stopLiveAndJudge);
+    // 시작/종료 버튼을 하나로 통합: 대기 중엔 녹화 시작, 녹화 중엔 같은 버튼이 [분석·판정]으로 동작
+    el('liveStartBtn').addEventListener('click', ()=>{
+      if(liveRunning) stopLiveAndJudge();
+      else startLive();
+    });
     el('liveResetBtn').addEventListener('click', ()=> resetAll(true));
 
     // 이전 저장 결과 복원
