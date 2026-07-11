@@ -77,26 +77,68 @@
   .status-ok{background:rgba(47,190,122,.13);color:var(--accent-green);}
   .status-err{background:rgba(228,84,74,.13);color:var(--danger);}
 
-  .upload-box{border:1.5px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;
-    transition:border-color .15s,background .15s;background:var(--surface-2);}
-  .upload-box:hover{border-color:var(--accent);}
-  .upload-box .ic{font-size:24px;margin-bottom:4px;}
-  .upload-box .lbl{font-size:12.5px;color:var(--text-dim);}
-  .upload-box .fname{font-size:12px;color:var(--accent);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .cam-wrap{position:relative;width:100%;max-width:420px;margin:0 auto;background:#000;border:1px solid var(--border);
+    border-radius:12px;overflow:hidden;aspect-ratio:3/4;}
+  /* aspect-ratio 속성을 지원하지 않는 구형 브라우저(일부 인앱 웹뷰 등)에서도
+     카메라 프레임 영역의 높이가 0이 되어 화면이 안 보이는 문제를 막기 위한 안전장치 */
+  .cam-wrap::before{content:"";display:block;padding-top:133.33%;}
+  @supports (aspect-ratio:3/4){ .cam-wrap::before{content:none;} }
+  .cam-wrap video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000;}
+  .cam-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2;background:transparent;}
+  .cam-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;z-index:2;}
+  .hud-chip{background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.18);color:#fff;padding:5px 9px;font-size:11px;
+    font-weight:700;border-radius:8px;font-family:'IBM Plex Mono',monospace;}
+  .hud-chip.rep{background:var(--accent);color:#1a0f0a;border-color:var(--accent);}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
+  .stat-box{background:var(--surface-2);border:1px solid var(--border);padding:12px 8px;text-align:center;border-radius:10px;}
+  .stat-box .v{font-family:'Oswald',sans-serif;font-weight:600;font-size:26px;color:var(--accent);line-height:1;}
+  .stat-box .l{font-size:10px;color:var(--text-faint);margin-top:5px;letter-spacing:.03em;}
+  .status-line{margin-top:12px;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;
+    font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;line-height:1.55;}
+  .status-line.ok{color:var(--accent-green);border-color:var(--accent-green);}
+  .status-line.down{color:var(--danger);border-color:var(--danger);}
+  .analyze-progress{display:none;margin-top:10px;height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden;}
+  .analyze-progress.show{display:block;}
+  .analyze-progress .bar{height:100%;width:0;background:var(--accent);transition:width .15s;}
+  .motion-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .motion-btns .btn{flex:1;min-width:110px;}
+  .motion-btns label.btn{display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .btn-analyze{display:block;width:100%;margin-top:8px;}
 
-  .mode-toggle{display:flex;gap:6px;margin-bottom:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;}
-  .mode-toggle button{flex:1;background:none;border:none;color:var(--text-faint);padding:8px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;}
-  .mode-toggle button.on{background:var(--surface-3);color:var(--text);}
+  /* ---- 반복 판정 방식 3칸 요약 ---- */
+  .rep-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+  @media(max-width:640px){.rep-summary{grid-template-columns:1fr;}}
+  .rep-sum-box{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .rep-sum-box .t{font-weight:700;font-size:12.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .rep-sum-box .t.down{color:var(--accent);}
+  .rep-sum-box .t.up{color:var(--accent-blue);}
+  .rep-sum-box .t.judge{color:var(--accent-green);}
+  .rep-sum-box p{margin:0;font-size:11.5px;color:var(--text-dim);line-height:1.55;}
+  .rep-sum-box p b{color:var(--text);}
 
-  .cam-wrap{position:relative;width:100%;background:#000;border-radius:10px;overflow:hidden;display:none;}
-  .cam-wrap.show{display:block;}
-  .cam-wrap video{width:100%;display:block;max-height:340px;object-fit:contain;background:#000;}
-  .cam-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;}
-  .marker-hint{position:absolute;bottom:8px;left:8px;right:8px;background:rgba(0,0,0,.72);color:var(--accent-gold);
-    font-family:'IBM Plex Mono',monospace;font-size:11.5px;padding:8px 10px;border-radius:7px;display:none;line-height:1.5;}
-  .marker-hint.show{display:block;}
-  .rec-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--danger);margin-right:5px;animation:blink 1s infinite;}
-  @keyframes blink{50%{opacity:.25;}}
+  /* ---- AI 캡처 판정 갤러리 ---- */
+  .capture-box{margin-top:14px;display:none;}
+  .capture-box.show{display:block;}
+  .capture-box h4{margin:0 0 4px;font-size:13px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.03em;}
+  .capture-box .cap-hint{font-size:11.5px;color:var(--text-dim);margin:0 0 10px;line-height:1.5;}
+  .cap-rep{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .cap-rep-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .cap-rep-head .rep-no{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--text);}
+  .cap-pill{display:inline-flex;align-items:center;gap:4px;font-weight:700;font-size:11.5px;padding:4px 10px;border-radius:14px;}
+  .cap-pill.ok{background:rgba(47,190,122,.15);color:var(--accent-green);}
+  .cap-pill.bad{background:rgba(228,84,74,.15);color:var(--danger);}
+  .cap-imgs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  @media(max-width:640px){.cap-imgs{grid-template-columns:1fr 1fr;}}
+  .cap-img-cell{position:relative;background:#000;border-radius:8px;overflow:hidden;}
+  .cap-img-cell img{width:100%;display:block;}
+  .cap-img-cell .tag{position:absolute;top:6px;left:6px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:10px;color:#fff;}
+  .cap-img-cell .tag.down{background:rgba(255,90,54,.9);}
+  .cap-img-cell .tag.up{background:rgba(29,116,181,.9);}
+  .cap-img-cell .ang{position:absolute;bottom:6px;right:6px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;background:rgba(0,0,0,.65);color:#fff;padding:2px 7px;border-radius:8px;}
+  .cap-reasons{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .cap-reasons li{font-size:11px;color:var(--text-dim);padding-left:14px;position:relative;line-height:1.45;}
+  .cap-reasons li::before{content:'—';position:absolute;left:0;color:var(--danger);}
+  .cap-reasons li.ok-line::before{color:var(--accent-green);}
 
   .checklist{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;}
   .checklist li{font-size:12.5px;color:var(--text-dim);display:flex;gap:8px;align-items:flex-start;padding:9px 10px;
@@ -208,28 +250,29 @@
 
   /* ---- pose analyzer (v2) ---- */
   .cam-wrap video{max-height:420px;}
-  .live-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
-  @media(max-width:640px){.live-tiles{grid-template-columns:1fr 1fr;}}
-  .rep-status-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px;}
-  @media(max-width:640px){.rep-status-row{grid-template-columns:1fr 1fr 1fr;}}
-  .rep-tile{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
-  .rep-tile .k{font-size:10.5px;color:var(--text-faint);font-weight:600;}
-  .rep-tile .v{font-family:'Oswald',sans-serif;font-weight:700;font-size:21px;margin-top:5px;letter-spacing:.01em;}
-  .rep-tile .v.phase-down{color:var(--accent);}
-  .rep-tile .v.phase-up{color:var(--accent-blue);}
-  .rep-tile .v.phase-wait{color:var(--text-faint);}
-  .rep-tile .v.depth-yes{color:var(--accent-green);}
-  .rep-tile .v.depth-no{color:var(--text-faint);}
-  .fb-box{margin-top:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
-  .fb-box h4{margin:0 0 8px;font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;font-family:'IBM Plex Mono',monospace;}
-  .fb-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
-  .fb-list li{font-size:12px;line-height:1.5;padding-left:16px;position:relative;color:var(--text-dim);}
-  .fb-list li.warn{color:var(--danger);}
-  .fb-list li.ok{color:var(--accent-green);}
-  .fb-list li::before{content:'—';position:absolute;left:0;}
-  .pose-badge{display:inline-flex;align-items:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;
-    padding:5px 10px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);margin-top:10px;}
-  .pose-badge.on{color:var(--accent-green);border-color:var(--accent-green);}
+
+  /* ---- 업로드/실시간 모드 전환 ---- */
+  .mode-toggle{display:flex;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:4px;margin:14px 0 12px;}
+  .mode-toggle button{flex:1;border:none;background:transparent;padding:9px 8px;border-radius:7px;font-family:'Inter',sans-serif;
+    font-weight:700;font-size:12px;color:var(--text-dim);cursor:pointer;transition:all .15s;line-height:1.3;}
+  .mode-toggle button.sel{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.10);}
+  .mode-toggle button .sub{display:block;font-weight:500;font-size:10px;color:var(--text-faint);margin-top:2px;}
+  .mode-panel{display:none;}
+  .mode-panel.show{display:block;}
+  .live-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .live-btns .btn{flex:1;min-width:110px;}
+
+  .hud-chip.phase{min-width:40px;text-align:center;background:rgba(0,0,0,.72);}
+  .hud-chip.phase.phase-down{background:rgba(79,169,232,.88);border-color:#4FA9E8;}
+  .hud-chip.phase.phase-up{background:rgba(255,138,99,.88);border-color:#FF8A63;}
+  .rec-badge{position:absolute;bottom:10px;left:10px;display:none;align-items:center;gap:6px;background:rgba(0,0,0,.72);
+    color:#fff;font-size:10.5px;font-weight:700;padding:5px 9px;border-radius:8px;font-family:'IBM Plex Mono',monospace;
+    z-index:2;letter-spacing:.04em;}
+  .rec-badge.show{display:inline-flex;}
+  .rec-badge .pulse{width:7px;height:7px;border-radius:50%;background:#E4423A;animation:pulseAnim 1s infinite;}
+  @keyframes pulseAnim{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .spark-box{margin-top:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;}
+  .spark-box .lbl{font-size:10.5px;color:var(--text-faint);font-weight:600;margin-bottom:4px;}
 
   /* ---- tab3 grade banner ---- */
   .grade-banner{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);
@@ -280,7 +323,7 @@
   <section class="panel active" id="panel1">
     <div class="card">
       <h2>기본 정보 입력</h2>
-      <p class="hint">이름, 만 나이, 성별을 입력하면 이어지는 탭에서 계속 사용됩니다.</p>
+      <p class="hint">이름·만 나이·성별을 입력하면 이후 탭에서 계속 사용됩니다.</p>
       <div class="field"><label>이름</label><input type="text" id="inName" placeholder="예) 홍길동"></div>
       <div class="grid2">
         <div class="field"><label>만 나이 (세)</label><input type="number" id="inAge" placeholder="예) 22" min="10" max="100"></div>
@@ -300,65 +343,69 @@
   <!-- ===================== TAB 2 ===================== -->
   <section class="panel" id="panel2">
     <div class="card">
-      <h2>녹화 및 영상 업로드 시 가이드라인</h2>
+      <h2>촬영 가이드라인</h2>
       <ul class="checklist">
-        <li>📐 <b>촬영 각도</b> — 측면 45° 방향에서 촬영해주세요.</li>
-        <li>👖 <b>발목 노출</b> — 발목 각도 분석을 위해 바지를 걷어 올려 발목이 잘 보이도록 촬영해주세요.</li>
-        <li>💡 <b>조명·전신</b> — 밝은 곳에서 머리부터 발끝까지 전신이 화면에 들어오게 촬영하면 관절 인식 정확도가 높아집니다.</li>
+        <li>📐 <b>촬영 각도</b> — <b>세로(세로모드) 측면 45°</b>에서 촬영</li>
+        <li>👖 <b>발목 노출</b> — 바지를 걷어 발목이 보이게</li>
+        <li>💡 <b>조명·전신</b> — 밝은 곳에서 전신이 화면에 들어오게</li>
       </ul>
-      <p class="hint" style="margin:12px 0 0;">영상을 녹화하거나 업로드한 뒤 <b>[▶ 시작]</b>을 누르면 AI가 영상 속 인물의 관절 위치를 자동으로 찾아 점과 선(스켈레톤)으로 표시하고, 무릎·고관절 각도와 동작 속도를 프레임 단위로 기록해 자세 가이드라인 대비 피드백을 제공합니다. 판정은 영상 전체 프레임이 아니라 <b>실제로 감지된 '하강→상승' 반복(rep) 구간만</b>을 기준으로 이루어지므로, 촬영 시작·종료 시점의 어정쩡한 자세나 카메라 이동 등은 판정에 영향을 주지 않습니다.</p>
+      <p class="hint" style="margin:12px 0 0;"><b>영상 업로드</b> 또는 <b>실시간 녹화</b> 중 원하는 방식을 선택하세요. 영상을 선택한 뒤 <b>[AI 관절 분석 시작]</b>을 누르거나, 카메라 앞에 서서 <b>[AI 관절 분석 시작]</b>을 누르면 프레임을 짚어가며 관절 각도·속도를 분석합니다. 판정은 <b>감지된 '하강→상승' 반복(rep) 구간만</b> 기준으로 하므로 시작·종료 시점의 자세는 영향이 없습니다. 영상·카메라 화면은 기기 밖으로 전송되지 않고 브라우저 안에서만 처리됩니다.</p>
     </div>
 
     <div class="card" id="analyzer-legpress-card">
       <h2>레그프레스 자세분석</h2>
-      <p class="hint">카메라로 녹화하거나 영상을 업로드한 뒤 [▶ 시작]을 누르세요. AI 포즈 추정(Pose Estimation)이 관절을 자동 인식하고, 모션 캡처 방식으로 각도·속도를 기록해 기준 범위를 벗어나면 즉시 피드백합니다.</p>
+      <p class="hint">영상 파일을 선택한 뒤 [AI 관절 분석 시작]을 누르세요.</p>
       <h3 class="sub-heading">자세 가이드</h3>
+      <p class="hint" style="margin:4px 0 10px;"><b>측정 종목</b> — 45도 레그 프레스 (45-Degree Leg Press) · 로우 풋 포지션 (Low Foot Position)</p>
       <ul class="checklist">
-        <li><b>발판 위치</b> — 발은 어깨너비, 발판 중앙에 고르게 배치</li>
-        <li><b>무릎 정렬</b> — 밀어낼 때 무릎이 안쪽으로 모이지 않는지 (Valgus 확인)</li>
-        <li><b>가동범위</b> — 무릎 각도 약 90°까지 내려갔다가 완전히 펴지 않고 멈추는지</li>
-        <li><b>동작 속도</b> — 내리는 구간(신장성)은 천천히, 급격히 무너지듯 내려가지 않는지</li>
+        <li><b>발판 위치</b> — 어깨너비, 발판 중앙</li>
+        <li><b>무릎 정렬</b> — 안쪽으로 모이지 않게</li>
+        <li><b>가동범위</b> — 무릎 약 90°까지 접었다가 완전히 펴지 않고 멈추기</li>
+        <li><b>동작 속도</b> — 내리는 구간은 천천히, 통제된 속도로</li>
       </ul>
-      <h3 class="sub-heading">판정 기준 (측정 항목)</h3>
+      <h3 class="sub-heading">판정 기준</h3>
+      <p class="hint" style="margin:0 0 10px;">자동 판정은 아래 <b>2가지 핵심 기준</b>만 널널하게 확인합니다. 나머지 항목(좌우 대칭·락아웃·속도 등)은 위 자세 가이드 참고용입니다.</p>
       <ul class="checklist">
-        <li><b>① 시작 자세</b> — 무릎이 완전히 펴진 상태에서 동작을 시작합니다.</li>
-        <li><b>② 하강 깊이</b> — 무릎 각도가 약 100° 이하까지 접혀야 유효한 '다운'으로 인정합니다.</li>
-        <li><b>③ 좌우 대칭</b> — 양쪽 무릎이 비슷한 각도로 함께 움직여야 합니다 (좌우 차이 12° 이내).</li>
-        <li><b>④ 상승 제한(락아웃 금지)</b> — 무릎을 완전히 펴서 잠그지 않고 약 172° 미만에서 멈춰야 합니다.</li>
-        <li><b>⑤ 동작 속도</b> — 내리는 구간이 급격하지 않고 통제된 속도여야 합니다.</li>
+        <li><b>① 하강 깊이</b> — 무릎 약 105°까지 접히면 인정</li>
+        <li><b>② 무릎 정렬</b> — 무릎이 안쪽으로 크게 쏠리지 않을 것</li>
       </ul>
-      <div class="analysis-box">
-        AI 추적은 이 중 <b>②③④⑤(하강 깊이·좌우 대칭·락아웃·속도)</b>를 관절 좌표(고관절·무릎·발목)로 추적해 반복 단위로 판정합니다. <b>①(시작 신호)</b>은 심판 신호처럼 별도로 인식하지 않고, 영상 전체에서 무릎이 접혔다 펴지는 구간을 자동으로 나누어 그중 기준에 가장 가까운 1회를 기준으로 판정합니다.
-      </div>
-      <div class="analysis-box">
-        <b>📏 반복(rep) 판정 방식</b> — 무릎이 접혀 각도가 약 100° 이하로 내려가면 <b>'하강'</b>, 무릎이 다시 펴져 약 158° 이상이 되면 <b>'상승'</b>으로 판정하여 1회로 카운트합니다. 발판이나 웨이트 스택 자체를 인식하는 것이 아니라 신체 관절(고관절·무릎·발목) 좌표로 각도를 추정하는 방식이므로, 실제 발판이 눌린 정도나 완전 락아웃 여부와는 약간의 오차가 있을 수 있습니다. 또한 영상 마지막 부분처럼 동작과 무관한 자세(정리 동작, 카메라 밖으로 이동 등)는 반복 구간 밖으로 분리되어 판정에 반영되지 않으며, 영상에서 감지된 여러 회의 동작 중 기준에 가장 가깝게 수행된 1회를 기준으로 종합 판정합니다.
+      <h3 class="sub-heading">📏 반복(rep) 판정 방식</h3>
+      <div class="rep-summary">
+        <div class="rep-sum-box"><div class="t down">⬇ 하강</div>
+          <p>무릎 각도가 <b>약 135° 아래</b>로 내려가면 하강으로 인식하고 <b>최저점</b>을 기록합니다.</p></div>
+        <div class="rep-sum-box"><div class="t up">⬆ 상승</div>
+          <p>다시 <b>약 158° 이상</b> 펴지면 <b>1회(rep)</b>로 카운트합니다.</p></div>
+        <div class="rep-sum-box"><div class="t judge">✓ 종합</div>
+          <p>여러 반복 중 <b>기준에 가장 가까운 1회</b>로 판정하며, <b>넉넉한 허용오차</b>를 적용합니다.</p></div>
       </div>
     </div>
 
     <div class="card" id="analyzer-squat-card">
       <h2>스쿼트 자세분석</h2>
-      <p class="hint">동일한 방식으로 스쿼트 영상을 분석합니다. 하강 깊이·무릎 정렬·상체 기울기·동작 속도를 자동으로 판정합니다.</p>
+      <p class="hint">영상 파일을 선택한 뒤 [AI 관절 분석 시작]을 누르세요. 하강 깊이·무릎 정렬을 널널한 기준으로 자동 판정합니다.</p>
       <h3 class="sub-heading">자세 가이드</h3>
+      <p class="hint" style="margin:4px 0 10px;"><b>측정 종목</b> — 바벨 백 스쿼트 (Barbell Back Squat) · 와이드 스탠스 (Wide Stance) · 스탠다드 하이바 (Standard High-Bar)</p>
       <ul class="checklist">
         <li><b>발 너비</b> — 어깨너비 또는 약간 넓게, 발끝은 살짝 바깥으로</li>
-        <li><b>깊이(Depth)</b> — 대퇴부가 바닥과 평행 이하로 내려가는지</li>
-        <li><b>무릎 정렬</b> — 무릎이 발끝 방향과 일치하는지 (Valgus 확인)</li>
-        <li><b>상체 각도</b> — 무게중심이 앞으로 쏠려 상체가 과도하게 숙여지지 않는지</li>
-        <li><b>동작 속도</b> — 하강은 통제된 속도로, 반동을 쓰지 않는지</li>
+        <li><b>깊이</b> — 대퇴부가 바닥과 평행 이하까지</li>
+        <li><b>무릎 정렬</b> — 발끝 방향과 일치</li>
+        <li><b>상체 각도</b> — 과도하게 숙이지 않기</li>
+        <li><b>동작 속도</b> — 반동 없이 통제된 하강</li>
       </ul>
-      <h3 class="sub-heading">판정 기준 (측정 항목)</h3>
+      <h3 class="sub-heading">판정 기준</h3>
+      <p class="hint" style="margin:0 0 10px;">자동 판정은 아래 <b>2가지 핵심 기준</b>만 널널하게 확인합니다. 나머지 항목(상체 각도·상승 완료 등)은 위 자세 가이드 참고용입니다.</p>
       <ul class="checklist">
-        <li><b>① 시작 자세</b> — 무릎이 완전히 펴진 상태에서 동작을 시작합니다.</li>
-        <li><b>② 하강 깊이</b> — 대퇴부가 바닥과 평행 이하로 내려가야(무릎 각도 약 100° 이하) 유효한 깊이로 인정합니다.</li>
-        <li><b>③ 무릎 정렬</b> — 무릎이 안쪽으로 모이지 않고(Valgus) 발끝 방향을 유지해야 합니다.</li>
-        <li><b>④ 상체 각도</b> — 무게중심이 앞으로 쏠려 상체가 과도하게 숙여지지 않아야 합니다.</li>
-        <li><b>⑤ 상승 완료</b> — 무릎을 다시 충분히 펴서(약 155° 이상) 일어서야 한 회로 인정합니다.</li>
+        <li><b>① 하강 깊이</b> — 대퇴부가 평행 부근(무릎 약 110° 이하)이면 인정</li>
+        <li><b>② 무릎 정렬</b> — 무릎이 안쪽으로 크게 쏠리지 않을 것</li>
       </ul>
-      <div class="analysis-box">
-        AI 추적은 이 중 <b>②③④⑤(하강 깊이·무릎 정렬·상체 각도·상승 완료)</b>를 관절 좌표(고관절·무릎·발목·어깨)로 추적해 반복 단위로 판정합니다. <b>①(시작 신호)</b>은 심판 신호처럼 별도로 인식하지 않고, 영상 전체에서 무릎이 접혔다 펴지는 구간을 자동으로 나누어 그중 기준에 가장 가까운 1회를 기준으로 판정합니다.
-      </div>
-      <div class="analysis-box">
-        <b>📏 반복(rep) 판정 방식</b> — 무릎이 접혀 각도가 약 100° 이하로 내려가면 <b>'하강'</b>, 무릎이 다시 펴져 약 158° 이상이 되면 <b>'상승'</b>으로 판정하여 1회로 카운트합니다. 실제 바벨(또는 대퇴부-바닥) 접촉 여부를 인식하는 것이 아니라 신체 관절(고관절·무릎·발목) 좌표로 각도를 추정하는 방식이므로, 실제 대퇴부가 바닥과 평행 이하로 내려갔는지 여부와는 약간의 오차가 있을 수 있습니다. 또한 영상 마지막 부분처럼 동작과 무관한 자세(정리 동작, 카메라 밖으로 이동 등)는 반복 구간 밖으로 분리되어 판정에 반영되지 않으며, 영상에서 감지된 여러 회의 동작 중 기준에 가장 가깝게 수행된 1회를 기준으로 종합 판정합니다.
+      <h3 class="sub-heading">📏 반복(rep) 판정 방식</h3>
+      <div class="rep-summary">
+        <div class="rep-sum-box"><div class="t down">⬇ 하강</div>
+          <p>무릎 각도가 <b>약 135° 아래</b>로 내려가면 하강으로 인식하고 <b>최저점</b>을 기록합니다.</p></div>
+        <div class="rep-sum-box"><div class="t up">⬆ 상승</div>
+          <p>다시 <b>약 158° 이상</b> 펴지면 <b>1회(rep)</b>로 카운트합니다.</p></div>
+        <div class="rep-sum-box"><div class="t judge">✓ 종합</div>
+          <p>여러 반복 중 <b>기준에 가장 가까운 1회</b>로 판정하며, <b>넉넉한 허용오차</b>를 적용합니다.</p></div>
       </div>
     </div>
   </section>
@@ -367,7 +414,7 @@
   <section class="panel" id="panel3">
     <div class="card">
       <h2>1RM 기록 입력</h2>
-      <p class="hint">종목별 1RM(1회 최대 반복 중량)을 kg 단위로 입력하세요. 값을 입력하는 즉시 아래에 해당 등급이 표시되며, [기록 저장]을 누르면 통계·종합결과에 반영됩니다.</p>
+      <p class="hint">종목별 1RM(kg)을 입력하면 등급이 바로 표시되고, [기록 저장] 시 통계·종합결과에 반영됩니다.</p>
       <div class="grid2">
         <div class="field"><label>레그프레스 1RM (kg)</label><input type="number" id="inLegpress" placeholder="예) 220" min="0" step="2.5"></div>
         <div class="field"><label>스쿼트 1RM (kg)</label><input type="number" id="inSquat" placeholder="예) 110" min="0" step="2.5"></div>
@@ -380,7 +427,7 @@
 
     <div class="card" id="threshCard" style="display:none;">
       <h2>등급 기준표 (레그프레스 · 스쿼트 각각 별도)</h2>
-      <p class="hint">ACSM 20대 상대 근력 기준(레그프레스)과 스트렝스 스탠다드 체중별 기준(스쿼트)을 반영했습니다. 입력한 기록이 속한 등급이 자동으로 색상 표시됩니다.</p>
+      <p class="hint">레그프레스는 ACSM 상대 근력 기준, 스쿼트는 스트렝스 스탠다드 체중별 기준입니다. 입력 기록의 등급이 색상으로 표시됩니다.</p>
       <div id="lpThreshWrap"></div>
       <div class="divider"></div>
       <div id="sqThreshWrap"></div>
@@ -423,7 +470,7 @@
   <section class="panel" id="panel4">
     <div class="card" id="stdevExampleCard">
       <h2>표준편차 예시 비교</h2>
-      <p class="hint">전체 사용자의 공유 기록을 바탕으로, 레그프레스와 스쿼트 기록이 평균에서 보통 얼마나 흩어져 있는지(표준편차) 보여주는 예시입니다. 표준편차가 클수록 사람마다 기록 편차가 크다는 뜻입니다.</p>
+      <p class="hint">전체 공유 기록 기준으로 두 종목 기록이 평균에서 얼마나 흩어져 있는지(표준편차)를 보여줍니다.</p>
       <div class="stat-tiles" id="stdevExampleTiles"></div>
       <div class="loader" id="stdevExampleLoader"><div class="spin"></div>불러오는 중...</div>
       <div class="analysis-box" id="stdevExampleText" style="display:none;"></div>
@@ -433,13 +480,13 @@
       <h2>종목 특징 및 주 사용 부위</h2>
       <div class="compare-item">
         <h3>레그프레스</h3>
-        <p>고정된 좌석과 발판을 따라 움직이는 머신 운동으로, 궤적이 고정되어 균형·코어 안정성 부담이 적고 상대적으로 고중량을 다룰 수 있습니다.</p>
+        <p>궤적이 고정된 머신 운동으로 균형·코어 부담이 적어 상대적으로 고중량을 다룰 수 있습니다.</p>
         <div class="muscle-row" id="lpMuscleMap"></div>
         <div class="region-tags"><span class="tag">대퇴사두근</span><span class="tag">둔근</span><span class="tag">햄스트링(보조)</span></div>
       </div>
       <div class="compare-item">
         <h3>스쿼트</h3>
-        <p>바벨을 등에 지고 자유 중량으로 수행하는 다관절 복합 운동으로, 척추 기립근과 코어가 지속적으로 자세를 안정시켜야 합니다.</p>
+        <p>바벨 자유 중량의 다관절 복합 운동으로, 척추 기립근과 코어가 계속 자세를 안정시켜야 합니다.</p>
         <div class="muscle-row" id="sqMuscleMap"></div>
         <div class="region-tags"><span class="tag">대퇴사두근</span><span class="tag">둔근</span><span class="tag">척추기립근</span><span class="tag">코어</span></div>
       </div>
@@ -466,7 +513,7 @@
 
     <div class="card" id="deviationCard" style="display:none;">
       <h2>개인 기록 편차 분석</h2>
-      <p class="hint">레그프레스는 궤적이 고정되어 안정성 부담 없이 더 높은 절대 중량을 다룰 수 있는 반면, 스쿼트는 균형·코어 안정화 능력이 최대 중량을 제한합니다. 아래 공식과 기준으로 배율을 계산합니다.</p>
+      <p class="hint">레그프레스는 궤적이 고정돼 더 높은 중량이 가능하고, 스쿼트는 균형·코어가 최대 중량을 제한합니다. 아래 공식으로 배율을 계산합니다.</p>
       <div class="formula-box">배율 = 레그프레스 1RM ÷ 스쿼트 1RM</div>
       <table class="thresh-table">
         <thead><tr><th>구간</th><th>배율</th><th>해석</th></tr></thead>
@@ -482,7 +529,7 @@
 
     <div class="card" id="rxCard" style="display:none;">
       <h2>운동 처방</h2>
-      <p class="hint">기록·자세분석 결과를 바탕으로 한 개인 맞춤 운동 처방입니다. FITT 원리(빈도 Frequency · 강도 Intensity · 시간 Time · 형태 Type)에 따라 구성했습니다.</p>
+      <p class="hint">기록·자세분석 결과 기반의 맞춤 처방으로, FITT 원리(빈도·강도·시간·형태)에 따라 구성했습니다.</p>
       <div id="rxLevelPlan"></div>
       <div id="rxList" style="margin-top:14px;"></div>
       <div id="rxWeekPlan"></div>
@@ -493,7 +540,7 @@
   <section class="panel" id="panel5">
     <div class="card">
       <h2>종합 결과</h2>
-      <p class="hint">01 정보입력 ~ 04 비교분석까지의 결과를 한 화면에 요약합니다. 각 탭에서 저장한 내용이 자동으로 반영됩니다.</p>
+      <p class="hint">01~04 탭의 결과를 한 화면에 요약합니다. 저장한 내용이 자동 반영됩니다.</p>
       <button class="btn btn-ghost" id="refreshSummaryBtn">종합 결과 새로고침</button>
       <div class="loader" id="summaryLoader"><div class="spin"></div>불러오는 중...</div>
       <div id="summaryWrap" style="margin-top:14px;"></div>
@@ -677,7 +724,7 @@
         (스켈레톤)를 화면 위에 재구성합니다.
      2) 모션 캡처(Motion Capture): 무릎·고관절 각도와 각속도(°/s)를
         시간 축으로 기록해, 자세 가이드라인의 허용 범위를 벗어나면
-        (깊이 부족 · 락아웃 · Valgus · 좌우 비대칭 · 과속 하강 등)
+        (깊이 부족 · 락아웃 · 무릎 안쏠림 · 좌우 비대칭 · 과속 하강 등)
         실시간 및 종합 피드백을 제공합니다.
   ================================================================= */
   let poseLandmarker = null, mpLoading = null;
@@ -737,57 +784,85 @@
     return { vL, vR };
   }
 
-  // 종목별 각도·속도 가이드라인 (판정 기준)
+  // 종목별 판정 기준 (2번 프로토타입처럼 핵심 2가지만 자동 판정에 사용)
   // 관절 좌표로 각도를 "추정"하는 방식이라 프레임마다 약간의 흔들림(지터)이 생길 수 있으므로,
-  // tol(허용오차)만큼의 여유를 두고 판정해 사소한 오차로 인한 과도한 '불인정'을 줄입니다.
+  // tol(허용오차)만큼 여유를 두고 판정해 사소한 오차로 인한 과도한 '불인정'을 줄입니다.
+  // ※ 자동 불인정 사유는 ① 하강 깊이 부족, ② Valgus(무릎 안쏠림) 두 가지만 확인합니다.
+  //    좌우 비대칭·락아웃·기울기·속도 등 나머지는 화면에 참고 지표로만 보여주고, 판정에는 반영하지 않습니다.
+  //    핵심 동작(하강→상승)이 수행되었다면 최대한 인정하는 방향으로 넉넉하게 판정합니다.
   const GUIDE = {
-    legpress: { depthMax:100, lockoutMin:172, asymMax:12, eccMax:220, conMax:400, leanMax:null,
-                tol:{ depth:8, lockout:5, asym:4, ecc:40, con:60 } },
-    squat:    { depthMax:100, topExtMin:155, asymMax:12, eccMax:220, conMax:420, leanMax:50,
-                tol:{ depth:8, topExt:8, asym:4, ecc:40, con:60, lean:6 } }
+    legpress: { depthMax:105, tol:{ depth:20 } },
+    squat:    { depthMax:110, tol:{ depth:20 } }
   };
   // 반복(rep) 구간을 나누기 위한 임계값 — 판정 기준(GUIDE)과는 별개로,
   // "한 회의 동작이 시작/종료되었다"를 판단하는 큰 폭의 굽힘·폄 기준입니다.
   // (벤치프레스의 '팔꿈치 접힘=다운 / 완전히 펴짐=업'과 같은 개념을 하체 종목에 적용한 것)
   const REP_DETECT = { downEnter: 135, upEnter: 158 };
-  // 반복 구간 내에서 무릎이 안쪽으로 모인(Valgus) 프레임 비율의 허용 상한
-  const VALGUS_RATIO_MAX = 0.30;
+  // 반복 구간 내에서 무릎이 안쪽으로 모인(Valgus) 프레임 비율의 허용 상한 (넉넉하게)
+  const VALGUS_RATIO_MAX = 0.55;
+
+  // MediaPipe VIDEO 모드는 타임스탬프가 항상 증가해야 하므로 앱 전체 공용 카운터를 사용
+  let mpClock = 0;
+  const MAX_ANALYZE_SEC = 60;   // 60초 초과 영상은 처음 60초까지만 분석
+  const STEP_SEC = 0.07;        // 프레임을 순차적으로 짚어가는 간격(약 14fps 샘플링)
 
   function createAnalyzer(prefix, lift){
     const card = document.getElementById(`analyzer-${prefix}-card`);
     const box = document.createElement('div');
     box.innerHTML = `
-      <div class="mode-toggle">
-        <button type="button" data-mode="cam" class="on">🎥 실시간 촬영</button>
-        <button type="button" data-mode="up">📁 영상 업로드</button>
+      <div class="mode-toggle" id="${prefix}-modeToggle">
+        <button type="button" class="sel" data-mode="upload">📁 영상 업로드<span class="sub">파일로 분석</span></button>
+        <button type="button" data-mode="live">🎥 실시간 녹화<span class="sub">웹캠으로 바로 분석</span></button>
       </div>
-      <div class="upload-box" id="${prefix}-uploadBox" style="display:none;">
-        <div class="ic">${lift==='legpress'?'🦵':'🏋️'}</div>
-        <div class="lbl">클릭하여 영상 파일 선택</div>
-        <div class="fname" id="${prefix}-fname"></div>
-      </div>
-      <input type="file" id="${prefix}-fileInput" accept="video/*" style="display:none">
 
-      <div class="btn-row" id="${prefix}-camBtns">
-        <button class="btn btn-ghost" id="${prefix}-camOnBtn">📷 카메라 활성화</button>
-        <button class="btn btn-danger" id="${prefix}-recBtn" disabled>⏺ 녹화</button>
-        <button class="btn btn-blue" id="${prefix}-startBtn" disabled>▶ 시작</button>
-        <button class="btn btn-ghost" id="${prefix}-stopBtn" disabled>■ 중지</button>
-        <button class="btn btn-ghost" id="${prefix}-resetBtn">↺ 초기화</button>
+      <div class="mode-panel show" id="${prefix}-uploadPanel">
+        <input type="file" id="${prefix}-fileInput" accept="video/*" style="display:none">
+        <div class="motion-btns">
+          <label class="btn btn-ghost" for="${prefix}-fileInput">영상파일선택</label>
+          <button class="btn btn-blue btn-analyze" id="${prefix}-startBtn" disabled>AI 관절 분석 시작</button>
+          <button class="btn btn-danger" id="${prefix}-stopBtn" disabled>분석종료</button>
+          <button class="btn btn-ghost" id="${prefix}-resetBtn">리셋</button>
+        </div>
       </div>
-      <div class="status-msg" id="${prefix}-camStatus"></div>
-      <div class="pose-badge" id="${prefix}-poseBadge" style="display:none;"></div>
+
+      <div class="mode-panel" id="${prefix}-livePanel">
+        <p class="hint" style="margin:0 0 10px;">카메라와 <b>세로 측면 45°</b>가 되도록 서서 시작 버튼을 누르세요. 반복을 마쳤으면 <b>[분석종료 판정]</b>을 눌러 결과를 확인합니다.</p>
+        <div class="live-btns">
+          <button class="btn btn-blue" id="${prefix}-liveStartBtn">AI 관절 분석 시작</button>
+          <button class="btn btn-danger" id="${prefix}-liveStopBtn" disabled>분석종료 판정</button>
+          <button class="btn btn-ghost" id="${prefix}-liveResetBtn">리셋</button>
+        </div>
+      </div>
 
       <div class="cam-wrap" id="${prefix}-camWrap">
-        <video id="${prefix}-video" playsinline muted></video>
+        <video id="${prefix}-video" controls playsinline muted></video>
         <canvas id="${prefix}-canvas"></canvas>
+        <div class="cam-hud">
+          <div class="hud-chip phase" id="${prefix}-hudPhase">대기</div>
+          <div class="hud-chip" id="${prefix}-hudAngle">무릎 --°</div>
+          <div class="hud-chip rep" id="${prefix}-hudRep">REP 0</div>
+        </div>
+        <div class="rec-badge" id="${prefix}-recBadge"><span class="pulse"></span>LIVE</div>
       </div>
 
-      <div class="rep-status-row" id="${prefix}-repStatus" style="display:none;"></div>
-      <div class="live-tiles" id="${prefix}-liveTiles" style="display:none;"></div>
-      <div class="fb-box" id="${prefix}-fbBox" style="display:none;">
-        <h4>실시간 피드백</h4>
-        <ul class="fb-list" id="${prefix}-fbList"></ul>
+      <div class="spark-box">
+        <div class="lbl">무릎 각도 추이 (최근 버퍼)</div>
+        <canvas id="${prefix}-sparkCanvas" width="440" height="56" style="width:100%;height:48px;display:block;"></canvas>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-box"><div class="v" id="${prefix}-statAngle">--</div><div class="l">현재 무릎 각도</div></div>
+        <div class="stat-box"><div class="v" id="${prefix}-statBottom">--</div><div class="l">최저 무릎 각도</div></div>
+        <div class="stat-box"><div class="v" id="${prefix}-statRep">0</div><div class="l">감지된 반복</div></div>
+      </div>
+
+      <div class="status-line" id="${prefix}-camStatus">영상 파일을 선택하면 분석이 준비됩니다. 세로 측면 45°에서 촬영한 1분 이내 영상이면 정확도가 높아집니다.</div>
+      <div class="analyze-progress" id="${prefix}-prog"><div class="bar" id="${prefix}-progBar"></div></div>
+
+      <div class="capture-box" id="${prefix}-capBox">
+        <h4>📸 AI 자동 캡처 판정 (하강·상승 지점)</h4>
+        <p class="cap-hint">AI가 각 반복(rep)의 <b>하강·상승 끝지점</b> 프레임을 캡처해 반복별 <b>인정/불인정</b>을 표시합니다.</p>
+        <div id="${prefix}-capList"></div>
       </div>
       <div id="${prefix}-verdictBox"></div>
     `;
@@ -795,21 +870,49 @@
 
     const el = (id)=> document.getElementById(`${prefix}-${id}`);
     const state = {
-      stream:null, recorder:null, chunks:[], recording:false,
-      analyzing:false, rafId:null, lastVideoTime:-1,
-      frames:[], srcReady:false, facingMode:'environment',
-      repPhase:'wait', repCur:null, reps:[]
+      srcReady:false, analyzing:false, aborted:false,
+      frames:[], repPhase:'wait', repCur:null, reps:[], minKnee:Infinity
     };
+    let mode = 'upload';
+    let liveStream = null, liveRunning = false, liveRaf = null, sparkBuf = [];
 
-    // 반복(rep) 단위로 동작을 나누어 추적 — 영상 전체가 아니라 실제 감지된 반복 구간만 판정에 사용
+    // 반복(rep) 단위로 동작을 나누어 추적 — 실제 감지된 반복 구간만 판정에 사용
     function newRepAccumulator(){
       return { bottomK:Infinity, bottomKL:0, bottomKR:0, topK:-Infinity, topKL:0, topKR:0,
-               eccMax:0, conMax:0, asymMax:0, leanMax:0, valgusFrames:0, frameCount:0, reachedTop:false };
+               eccMax:0, conMax:0, asymMax:0, leanMax:0, valgusFrames:0, frameCount:0, reachedTop:false,
+               capBottomK:Infinity, capTopK:-Infinity, bottomImg:null, topImg:null };
+    }
+
+    /* ---------- AI 자동 캡처 (하강·상승 끝지점) ---------- */
+    const capCanvas = document.createElement('canvas');
+    function captureFrame(lm){
+      try{
+        const video = el('video');
+        const vw = video.videoWidth || 640, vh = video.videoHeight || 360;
+        const tw = 320, th = Math.max(60, Math.round(vh * tw / vw));
+        capCanvas.width = tw; capCanvas.height = th;
+        const ctx = capCanvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, tw, th);
+        if(lm) drawSkeleton(ctx, lm, tw, th, null, true);
+        return capCanvas.toDataURL('image/jpeg', 0.62);
+      }catch(e){ return null; }
+    }
+    function maybeCapture(f, lm){
+      const cur = state.repCur;
+      if(!cur) return;
+      if(state.repPhase === 'down' && f.kSmooth < cur.capBottomK - 1.5){
+        cur.capBottomK = f.kSmooth;
+        cur.bottomImg = captureFrame(lm);
+      } else if(state.repPhase === 'up' && f.kSmooth > cur.capTopK + 1.5){
+        cur.capTopK = f.kSmooth;
+        cur.topImg = captureFrame(lm);
+      }
     }
     function resetRepTracking(){
-      state.repPhase = 'wait'; // wait(대기) -> down(하강 중) -> up(상승 완료, 다음 하강 대기)
+      state.repPhase = 'wait';
       state.repCur = null;
       state.reps = [];
+      state.minKnee = Infinity;
     }
     function accumulateRep(acc, f){
       if(f.kSmooth < acc.bottomK){ acc.bottomK = f.kSmooth; acc.bottomKL = f.kL; acc.bottomKR = f.kR; }
@@ -822,12 +925,53 @@
       acc.frameCount++;
     }
     function finalizeCurrentRep(){
-      // 바닥(하강)까지 갔다가 다시 위(상승)까지 돌아온, "완결된" 반복만 채택합니다.
-      // 프레임 수가 너무 적은 반복(순간적인 오검출)은 제외합니다.
+      // 하강까지 갔다가 상승까지 돌아온 "완결된" 반복만 채택 (순간 오검출 제외)
       if(state.repCur && state.repCur.reachedTop && state.repCur.frameCount >= 4){
         state.reps.push(state.repCur);
+        renderCaptureGallery();
       }
       state.repCur = null;
+    }
+
+    // 반복 1회의 기준 충족 여부 계산 — 하강 깊이 · Valgus 두 가지 핵심 기준만 자동 판정
+    function repReasonsFor(r){
+      const g = GUIDE[lift];
+      const reasons = [];
+      if(r.bottomK > g.depthMax + g.tol.depth){
+        reasons.push(lift === 'squat'
+          ? `하강 깊이 부족 — 최저 무릎 각도 ${r.bottomK.toFixed(0)}° (기준 약 ${g.depthMax}° 이하)`
+          : `하강 시 무릎 각도가 ${r.bottomK.toFixed(0)}°까지만 굽혀져 가동범위가 부족합니다 (기준 약 ${g.depthMax}° 이하)`);
+      }
+      const valgusRatio = r.frameCount ? r.valgusFrames / r.frameCount : 0;
+      if(valgusRatio > VALGUS_RATIO_MAX) reasons.push(`이번 반복의 ${(valgusRatio*100).toFixed(0)}% 구간에서 무릎이 안쪽으로 모였습니다`);
+      return { reasons, valgusRatio };
+    }
+
+    // 캡처 갤러리 렌더링
+    function renderCaptureGallery(){
+      const boxEl = el('capBox'), listEl = el('capList');
+      if(!state.reps.length){ boxEl.classList.remove('show'); listEl.innerHTML=''; return; }
+      boxEl.classList.add('show');
+      listEl.innerHTML = state.reps.map((r, i)=>{
+        const ev = repReasonsFor(r);
+        const ok = ev.reasons.length === 0;
+        const imgCell = (img, type, label, ang)=> img
+          ? `<div class="cap-img-cell"><img src="${img}" alt="${label} 캡처"><span class="tag ${type}">${label}</span><span class="ang">무릎 ${ang.toFixed(0)}°</span></div>`
+          : `<div class="cap-img-cell" style="display:flex;align-items:center;justify-content:center;min-height:90px;color:#999;font-size:11px;">캡처 없음</div>`;
+        return `<div class="cap-rep">
+          <div class="cap-rep-head">
+            <span class="rep-no">REP ${i+1}</span>
+            <span class="cap-pill ${ok?'ok':'bad'}">${ok?'✓ 인정':'✕ 불인정'}</span>
+          </div>
+          <div class="cap-imgs">
+            ${imgCell(r.bottomImg, 'down', '⬇ 하강 지점', r.bottomK)}
+            ${imgCell(r.topImg, 'up', '⬆ 상승 지점', r.topK)}
+          </div>
+          <ul class="cap-reasons">${ok
+            ? '<li class="ok-line">캡처된 하강·상승 자세 기준 모든 항목 충족</li>'
+            : ev.reasons.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ul>
+        </div>`;
+      }).join('');
     }
     function trackRep(f){
       const k = f.kSmooth;
@@ -847,7 +991,6 @@
       if(state.repPhase === 'up'){
         accumulateRep(state.repCur, f);
         if(k <= REP_DETECT.downEnter){
-          // 다시 굽혀지기 시작 = 다음 반복의 시작 → 현재 반복을 확정하고 새 반복 추적 시작
           finalizeCurrentRep();
           state.repPhase = 'down';
           state.repCur = newRepAccumulator();
@@ -856,145 +999,54 @@
       }
     }
     function finalizeRepsAtEnd(){
-      // 영상이 '상승' 구간(락아웃 근처)에서 끝난 경우는 이미 하강→상승을 모두 거쳤으므로 완결된 반복으로 인정합니다.
-      // 반대로 '하강' 구간에서 영상이 끝난 경우(다시 펴지 못하고 영상이 끊긴 경우)는 미완성 반복이므로 버립니다.
+      // '상승' 구간에서 끝났다면 완결된 반복으로 인정, '하강' 도중 끊겼다면 미완성이므로 제외
       if(state.repPhase === 'up' && state.repCur) finalizeCurrentRep();
     }
 
-    function showCamStatus(msg, ok){
+    function setStatus(msg, cls){
       const b = el('camStatus');
       b.textContent = msg;
-      b.className = 'status-msg show ' + (ok ? 'status-ok' : 'status-err');
-    }
-    function poseBadge(msg, on){
-      const b = el('poseBadge');
-      if(msg === null){ b.style.display='none'; return; }
-      b.style.display='inline-flex';
-      b.textContent = msg;
-      b.classList.toggle('on', !!on);
+      b.className = 'status-line' + (cls ? ' ' + cls : '');
     }
 
-    // mode toggle
-    box.querySelectorAll('.mode-toggle button').forEach(b=>{
-      b.addEventListener('click', ()=>{
-        box.querySelectorAll('.mode-toggle button').forEach(x=>x.classList.remove('on'));
-        b.classList.add('on');
-        const isUp = b.dataset.mode === 'up';
-        el('uploadBox').style.display = isUp ? 'block' : 'none';
-        el('camBtns').style.display = isUp ? 'none' : 'flex';
-        if(isUp){
-          // 업로드 모드에서도 시작/중지/초기화는 필요하므로 버튼줄은 유지하되 카메라 버튼만 감춤
-          el('camBtns').style.display = 'flex';
-          el('camOnBtn').style.display = 'none';
-          el('recBtn').style.display = 'none';
-        } else {
-          el('camOnBtn').style.display = 'inline-block';
-          el('recBtn').style.display = 'inline-block';
-        }
-      });
-    });
-
-    /* ---------- 카메라 활성화 ---------- */
-    async function openCamera(facingMode){
-      try{ return await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:facingMode } }, audio:false }); }
-      catch(e1){ return await navigator.mediaDevices.getUserMedia({ video:true, audio:false }); }
-    }
-    el('camOnBtn').addEventListener('click', async ()=>{
-      if(!window.isSecureContext){
-        showCamStatus('⚠ 카메라는 HTTPS(또는 localhost) 환경에서만 동작합니다. 배포된 주소로 접속해주세요. 그 전까지는 [영상 업로드]를 이용해주세요.', false);
-        return;
-      }
-      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-        showCamStatus('⚠ 이 브라우저는 카메라 접근을 지원하지 않습니다. [영상 업로드]를 이용해주세요.', false);
-        return;
-      }
-      try{
-        if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); }
-        const stream = await openCamera(state.facingMode);
-        state.stream = stream;
-        const video = el('video');
-        video.srcObject = stream;
-        video.controls = false;
-        await video.play();
-        el('camWrap').classList.add('show');
-        el('recBtn').disabled = false;
-        showCamStatus('✓ 카메라가 활성화되었습니다. [⏺ 녹화]로 동작을 촬영해주세요.', true);
-        fitCanvas();
-      }catch(e){
-        const reason = e.name || 'UnknownError';
-        let hint = '카메라 권한을 허용한 뒤 다시 시도해주세요.';
-        if(reason === 'NotFoundError') hint = '사용 가능한 카메라를 찾지 못했습니다.';
-        if(reason === 'NotReadableError') hint = '다른 앱이 카메라를 사용 중입니다.';
-        showCamStatus(`⚠ 카메라를 사용할 수 없습니다 (${reason}). ${hint} 대신 [영상 업로드]를 이용해주세요.`, false);
-      }
-    });
-
-    /* ---------- 녹화 ---------- */
-    el('recBtn').addEventListener('click', ()=>{
-      if(!state.stream) return;
-      if(!state.recording){
-        state.chunks = [];
-        try{
-          state.recorder = new MediaRecorder(state.stream);
-          state.recorder.ondataavailable = (e)=>{ if(e.data.size>0) state.chunks.push(e.data); };
-          state.recorder.onstop = ()=>{
-            const blob = new Blob(state.chunks, { type: state.recorder.mimeType || 'video/webm' });
-            const video = el('video');
-            state.stream.getTracks().forEach(t=>t.stop());
-            state.stream = null;
-            el('recBtn').disabled = true;
-            video.srcObject = null;
-            video.src = URL.createObjectURL(blob);
-            video.controls = true;
-            state.srcReady = true;
-            el('startBtn').disabled = false;
-            driveLog('영상 녹화', {종목: lift==='legpress'?'레그프레스':'스쿼트', 방식:'실시간 촬영 녹화'});
-            showCamStatus('✓ 녹화가 완료되었습니다. [▶ 시작]을 누르면 AI 자세분석이 시작됩니다.', true);
-            fitCanvas();
-          };
-          state.recorder.start();
-          state.recording = true;
-          el('recBtn').innerHTML = '<span class="rec-dot"></span>녹화 중지';
-          el('camOnBtn').disabled = true;
-        }catch(e){ alert('이 브라우저에서는 녹화 기능을 지원하지 않습니다. 영상 업로드를 이용해주세요.'); }
-      } else {
-        state.recorder.stop();
-        state.recording = false;
-        el('recBtn').innerHTML = '⏺ 녹화';
-        el('camOnBtn').disabled = false;
-      }
-    });
-
-    /* ---------- 업로드 ---------- */
-    el('uploadBox').addEventListener('click', ()=> el('fileInput').click());
+    /* ---------- 영상 파일 선택 ---------- */
     el('fileInput').addEventListener('change', ()=>{
       const f = el('fileInput').files[0];
       if(!f) return;
-      el('fname').textContent = '✓ ' + f.name;
+      state.aborted = true; // 진행 중인 분석 중단
+      resetAll(false);
       const video = el('video');
-      if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); state.stream=null; }
-      video.srcObject = null;
       video.src = URL.createObjectURL(f);
-      video.controls = true;
-      state.srcReady = true;
-      el('camWrap').classList.add('show');
-      el('startBtn').disabled = false;
-      driveLog('영상 업로드', {종목: lift==='legpress'?'레그프레스':'스쿼트', 방식:'영상 파일 업로드', 파일명: f.name});
-      showCamStatus('✓ 영상이 업로드되었습니다. [▶ 시작]을 누르면 AI 자세분석이 시작됩니다.', true);
-      fitCanvas();
+      video.load();
+      setStatus(`"${f.name}" 영상을 불러오는 중...`);
+      el('fileInput').value = '';
+      video.onloadedmetadata = async ()=>{
+        fitCanvas();
+        state.srcReady = true;
+        try{
+          await ensurePose((m)=>setStatus(m));
+          const dur = video.duration || 0;
+          setStatus(dur > MAX_ANALYZE_SEC
+            ? `영상 준비 완료 (약 ${Math.round(dur)}초). ${MAX_ANALYZE_SEC}초를 넘는 영상은 처음 ${MAX_ANALYZE_SEC}초까지만 분석됩니다. 'AI 관절 분석 시작'을 눌러주세요.`
+            : `영상 준비 완료 (약 ${Math.round(dur)}초). 'AI 관절 분석 시작'을 눌러주세요.`, 'ok');
+          el('startBtn').disabled = false;
+          el('stopBtn').disabled = true;
+          driveLog('영상 업로드', {종목: lift==='legpress'?'레그프레스':'스쿼트', 파일명: f.name});
+        }catch(e){
+          setStatus('AI 모델을 불러오지 못했습니다 (네트워크 문제일 수 있어요). 잠시 후 다시 시도해주세요.', 'down');
+        }
+      };
     });
 
     /* ---------- 캔버스 ---------- */
     function fitCanvas(){
       const video = el('video'), canvas = el('canvas');
-      canvas.width = video.videoWidth || video.clientWidth || 640;
-      canvas.height = video.videoHeight || video.clientHeight || 360;
+      canvas.width = video.videoWidth || 480;
+      canvas.height = video.videoHeight || 640;
     }
-    el('video').addEventListener('loadedmetadata', fitCanvas);
-    window.addEventListener('resize', ()=>{ /* canvas는 내재 해상도 기준이라 재계산 불필요 */ });
 
-    function drawSkeleton(ctx, lm, w, h, flags){
-      ctx.clearRect(0,0,w,h);
+    function drawSkeleton(ctx, lm, w, h, flags, noClear){
+      if(!noClear) ctx.clearRect(0,0,w,h);
       ctx.lineWidth = Math.max(2, w/300);
       SKELETON_EDGES.forEach(([a,b])=>{
         const pa = lm[a], pb = lm[b];
@@ -1002,7 +1054,6 @@
         ctx.strokeStyle = 'rgba(255,255,255,.85)';
         ctx.beginPath(); ctx.moveTo(pa.x*w, pa.y*h); ctx.lineTo(pb.x*w, pb.y*h); ctx.stroke();
       });
-      // 하체 강조 (좌: 파랑, 우: 주황)
       const seg = (a,b,color)=>{ const pa=lm[a], pb=lm[b]; if(!pa||!pb) return;
         ctx.strokeStyle=color; ctx.beginPath(); ctx.moveTo(pa.x*w,pa.y*h); ctx.lineTo(pb.x*w,pb.y*h); ctx.stroke(); };
       ctx.lineWidth = Math.max(3, w/220);
@@ -1021,7 +1072,7 @@
       });
     }
 
-    /* ---------- 분석 루프 ---------- */
+    /* ---------- 프레임 계산 ---------- */
     function pushFrame(t, lm){
       const kL = angleAtLm(lm[LM.hipL], lm[LM.kneeL], lm[LM.ankleL]);
       const kR = angleAtLm(lm[LM.hipR], lm[LM.kneeR], lm[LM.ankleR]);
@@ -1031,14 +1082,10 @@
       let vel = 0;
       const prev = state.frames[state.frames.length-1];
       if(prev && t > prev.t){
-        vel = (knee - prev.knee) / (t - prev.t); // °/s, 음수=하강(굽힘), 양수=상승(폄)
-        // 3프레임 지수평활
+        vel = (knee - prev.knee) / (t - prev.t);
         vel = prev.velS !== undefined ? prev.velS*0.6 + vel*0.4 : vel;
       }
-      // 관절 좌표 인식이 프레임마다 미세하게 흔들리는 지터(jitter)를 줄이기 위해
-      // 최근 5프레임 무릎 각도의 이동평균을 함께 계산합니다. 반복(rep) 구간 판단과
-      // 상단/하단 각도 기록에는 이 평활값(kSmooth)을 사용해, 한 프레임의 순간적인
-      // 오검출이 곧바로 판정 실패로 이어지지 않도록 합니다.
+      // 지터 완화를 위한 최근 5프레임 이동평균 — rep 판정에는 평활값(kSmooth) 사용
       const win = state.frames.slice(-4).map(x=>x.knee).concat([knee]);
       const kSmooth = win.reduce((a,b)=>a+b,0) / win.length;
       const f = { t, kL, kR, knee, kSmooth, lean, vL, vR, velS: vel };
@@ -1047,131 +1094,136 @@
       return f;
     }
 
-    const PHASE_LABEL = { wait:'대기', down:'⬇ 다운', up:'⬆ 업' };
-    const PHASE_CLASS = { wait:'phase-wait', down:'phase-down', up:'phase-up' };
+    /* ---------- 시크(seek) 기반 프레임 단위 분석 ---------- */
+    function seekTo(t){
+      const video = el('video');
+      return new Promise(resolve=>{
+        if(Math.abs(video.currentTime - t) < 0.001){ resolve(); return; }
+        const handler = ()=>{ video.removeEventListener('seeked', handler); resolve(); };
+        video.addEventListener('seeked', handler);
+        try{ video.currentTime = t; }catch(e){ resolve(); }
+      });
+    }
 
-    function liveFeedback(f){
-      const g = GUIDE[lift];
-      const warns = [];
-      if(Math.abs(f.kL - f.kR) > g.asymMax) warns.push(`좌우 무릎 각도 차이 ${Math.abs(f.kL-f.kR).toFixed(0)}° — 비대칭 주의`);
-      if(f.vL || f.vR) warns.push('무릎이 안쪽으로 모이고 있습니다 (Valgus) — 무릎을 발끝 방향으로');
-      if(f.velS < -g.eccMax) warns.push(`하강 속도 ${Math.abs(f.velS).toFixed(0)}°/s — 너무 빠릅니다. 통제하며 내려가세요`);
-      if(lift==='squat' && g.leanMax && f.lean > g.leanMax) warns.push(`상체 기울기 ${f.lean.toFixed(0)}° — 상체가 과도하게 숙여졌습니다`);
-      if(lift==='legpress' && f.knee > GUIDE.legpress.lockoutMin && f.velS > 30) warns.push('무릎이 완전히 펴지고 있습니다 — 락아웃 전에 멈추세요');
+    function processFrameAt(){
+      const video = el('video'), canvas = el('canvas');
+      if(!video.videoWidth) return;
+      mpClock += 34; // 항상 증가하는 타임스탬프
+      let result = null;
+      try{ result = poseLandmarker.detectForVideo(video, mpClock); }catch(e){ return; }
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!(result && result.landmarks && result.landmarks[0])) return;
+      const lm = result.landmarks[0];
+      const f = pushFrame(video.currentTime, lm);
+      maybeCapture(f, lm);
+      drawSkeleton(ctx, lm, canvas.width, canvas.height, {vL:f.vL, vR:f.vR}, true);
+      // HUD·스탯 갱신
+      const disp = Math.round(f.kSmooth);
+      state.minKnee = Math.min(state.minKnee, f.kSmooth);
+      el('hudAngle').textContent = `무릎 ${disp}°`;
+      el('hudRep').textContent = `REP ${state.reps.length}`;
+      el('statAngle').textContent = disp + '°';
+      el('statBottom').textContent = Math.round(state.minKnee) + '°';
+      el('statRep').textContent = state.reps.length;
+      const phaseChip = el('hudPhase');
+      if(phaseChip){
+        phaseChip.className = 'hud-chip phase' + (state.repPhase==='down' ? ' phase-down' : state.repPhase==='up' ? ' phase-up' : '');
+        phaseChip.textContent = state.repPhase==='down' ? '하강' : state.repPhase==='up' ? '상승' : '대기';
+      }
+      updateSpark(f.kSmooth);
+    }
 
-      // 실시간 REP 카운터 · 현재 단계(다운/업) · 깊이 도달 여부 — 촬영 중에도 바로 확인할 수 있도록 표시
-      const depthTarget = g.depthMax + g.tol.depth;
-      const depthReached = state.repCur ? state.repCur.bottomK <= depthTarget : false;
-      el('repStatus').style.display = 'grid';
-      el('repStatus').innerHTML = `
-        <div class="rep-tile"><div class="k">REP</div><div class="v">${state.reps.length}</div></div>
-        <div class="rep-tile"><div class="k">현재 단계</div><div class="v ${PHASE_CLASS[state.repPhase]}">${PHASE_LABEL[state.repPhase]}</div></div>
-        <div class="rep-tile"><div class="k">깊이 도달</div><div class="v ${depthReached?'depth-yes':'depth-no'}">${depthReached?'✓ 도달':'미도달'}</div></div>
-      `;
-
-      el('liveTiles').style.display = 'grid';
-      el('liveTiles').innerHTML = `
-        <div class="angle-tile"><div class="k">왼 무릎 각도</div><div class="v">${f.kL.toFixed(0)}°</div></div>
-        <div class="angle-tile"><div class="k">오른 무릎 각도</div><div class="v">${f.kR.toFixed(0)}°</div></div>
-        <div class="angle-tile"><div class="k">각속도</div><div class="v">${f.velS>=0?'+':''}${f.velS.toFixed(0)}°/s</div></div>
-        ${lift==='squat' ? `<div class="angle-tile"><div class="k">상체 기울기</div><div class="v">${f.lean.toFixed(0)}°</div></div>` : ''}
-      `;
-      el('fbBox').style.display = 'block';
-      el('fbList').innerHTML = warns.length
-        ? warns.map(w=>`<li class="warn">${escapeHtml(w)}</li>`).join('')
-        : '<li class="ok">현재 프레임 기준 자세 양호</li>';
-      return warns;
+    /* ---------- 무릎 각도 스파크라인 (최근 버퍼) ---------- */
+    function updateSpark(k){
+      const scv = el('sparkCanvas');
+      if(!scv) return;
+      sparkBuf.push(k);
+      if(sparkBuf.length > 40) sparkBuf.shift();
+      const sctx = scv.getContext('2d');
+      const W = scv.width, H = scv.height;
+      sctx.clearRect(0,0,W,H);
+      if(sparkBuf.length < 2) return;
+      const minV=60, maxV=180;
+      const stepX = W/39;
+      sctx.beginPath();
+      sparkBuf.forEach((v,i)=>{ const x=i*stepX, y=H-((v-minV)/(maxV-minV))*H; i===0 ? sctx.moveTo(x,y) : sctx.lineTo(x,y); });
+      sctx.strokeStyle = '#FF5A36'; sctx.lineWidth = 2; sctx.stroke();
+      [REP_DETECT.downEnter, REP_DETECT.upEnter].forEach(th=>{
+        const y = H-((th-minV)/(maxV-minV))*H;
+        sctx.strokeStyle = 'rgba(29,116,181,.35)'; sctx.setLineDash([3,3]); sctx.lineWidth = 1;
+        sctx.beginPath(); sctx.moveTo(0,y); sctx.lineTo(W,y); sctx.stroke(); sctx.setLineDash([]);
+      });
     }
 
     async function startAnalysis(){
-      if(!state.srcReady){ showCamStatus('먼저 영상을 녹화하거나 업로드해주세요.', false); return; }
-      try{ await ensurePose((m,ok)=>showCamStatus(m,ok)); }
-      catch(e){
-        showCamStatus('⚠ AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 연결을 확인하고 다시 시도해주세요.', false);
-        return;
-      }
+      if(!state.srcReady || state.analyzing) return;
+      try{ await ensurePose((m)=>setStatus(m)); }
+      catch(e){ setStatus('AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.', 'down'); return; }
       const video = el('video');
+      if(!video.videoWidth){ setStatus('영상을 아직 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'down'); return; }
+
+      state.analyzing = true;
+      state.aborted = false;
       state.frames = [];
       resetRepTracking();
-      state.analyzing = true;
-      state.lastVideoTime = -1;
       el('startBtn').disabled = true;
       el('stopBtn').disabled = false;
       el('verdictBox').innerHTML = '';
-      poseBadge('POSE ESTIMATION · 관절 자동 인식 중', true);
-      video.currentTime = 0;
-      try{ await video.play(); }catch(e){}
-      loop();
+      el('capBox').classList.remove('show'); el('capList').innerHTML='';
+      const prog = el('prog'), bar = el('progBar');
+      prog.classList.add('show'); bar.style.width = '0%';
 
-      function loop(){
-        if(!state.analyzing) return;
-        if(video.ended){ finishAnalysis(); return; }
-        if(video.currentTime !== state.lastVideoTime && video.readyState >= 2){
-          state.lastVideoTime = video.currentTime;
-          let result = null;
-          try{ result = poseLandmarker.detectForVideo(video, performance.now()); }catch(e){}
-          const canvas = el('canvas');
-          if(canvas.width !== (video.videoWidth||canvas.width)) fitCanvas();
-          const ctx = canvas.getContext('2d');
-          if(result && result.landmarks && result.landmarks[0]){
-            const lm = result.landmarks[0];
-            const f = pushFrame(video.currentTime, lm);
-            drawSkeleton(ctx, lm, canvas.width, canvas.height, {vL:f.vL, vR:f.vR});
-            liveFeedback(f);
-          } else {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            el('fbList').innerHTML = '<li class="warn">인물을 인식하지 못했습니다 — 전신이 화면에 들어오게 해주세요</li>';
-            el('fbBox').style.display = 'block';
-          }
-        }
-        state.rafId = requestAnimationFrame(loop);
+      video.pause();
+      fitCanvas();
+      const rawDur = video.duration || 0;
+      const endT = Math.max(0, Math.min(rawDur, MAX_ANALYZE_SEC));
+      setStatus(rawDur > MAX_ANALYZE_SEC
+        ? `영상이 약 ${Math.round(rawDur)}초입니다. 처음 ${MAX_ANALYZE_SEC}초까지 프레임 단위로 분석합니다...`
+        : '분석 중... 프레임을 한 장씩 짚어가며 끝까지 확인합니다.');
+
+      let t = 0;
+      while(t <= endT + 0.0001){
+        if(state.aborted) break;
+        const clamped = Math.min(t, endT);
+        await seekTo(clamped);
+        if(state.aborted) break;
+        processFrameAt();
+        if(endT > 0) bar.style.width = Math.min(100, Math.round((clamped/endT)*100)) + '%';
+        t += STEP_SEC;
       }
+      bar.style.width = '100%';
+      state.analyzing = false;
+      el('startBtn').disabled = false;
+      el('stopBtn').disabled = true;
+      if(state.aborted){
+        setStatus("분석이 중단되었습니다. 다시 분석하려면 'AI 관절 분석 시작'을 눌러주세요.");
+        return;
+      }
+      finishAnalysis();
     }
 
     function evaluateSession(){
-      const g = GUIDE[lift];
       const fs = state.frames;
       if(fs.length < 10) return null;
-
-      // 영상이 '상승' 도중 끝난 경우(이미 하강→상승을 모두 거친 경우) 마지막 반복을 확정합니다.
-      // '하강' 도중 끝난 경우(다시 펴지 못한 채 영상이 끊긴 경우)는 미완성 반복이라 판정에서 제외합니다.
       finalizeRepsAtEnd();
       const reps = state.reps;
 
       if(reps.length === 0){
-        // 완전한 반복(하강→상승) 동작 자체가 감지되지 않은 경우: '불인정'이 아니라 '판정불가'로 구분합니다.
-        // 자세가 나빠서가 아니라 인식 조건(전신 노출, 각도, 동작 포함 여부) 문제일 수 있기 때문입니다.
         return {
           lift, verdict:'판정불가',
-          reasons:['무릎을 충분히 굽혔다가 다시 편 상태로 되돌아오는 완전한 반복 동작이 인식되지 않았습니다. 전신이 화면에 나오도록, 하강과 상승 동작이 모두 포함되게 다시 촬영해주세요.'],
+          reasons:['무릎을 충분히 굽혔다가 다시 편 완전한 반복 동작이 인식되지 않았습니다. 전신이 화면에 나오도록, 하강과 상승이 모두 포함되게 다시 촬영해주세요.'],
           bottom:{kneeAngleL:0, kneeAngleR:0}, top:{kneeAngleL:0, kneeAngleR:0},
           motion:{ frameCount: fs.length }, repCount:0, savedAt:Date.now()
         };
       }
-
-      // 감지된 반복(rep)마다 기준 충족 여부를 계산합니다.
       const evaluated = reps.map(r=>{
-        const reasons = [];
-        if(lift === 'squat'){
-          if(r.bottomK > g.depthMax + g.tol.depth) reasons.push(`하강 깊이 부족 — 최저 무릎 각도 ${r.bottomK.toFixed(0)}° (기준 ${g.depthMax}° 이하)`);
-          if(r.topK < g.topExtMin - g.tol.topExt) reasons.push(`상승 완료 시 무릎이 충분히 펴지지 않았습니다 (최대 ${r.topK.toFixed(0)}°, 기준 ${g.topExtMin}° 이상)`);
-          if(r.leanMax > g.leanMax + g.tol.lean) reasons.push(`상체 기울기 최대 ${r.leanMax.toFixed(0)}° — 과도한 숙임(기준 ${g.leanMax}° 이내)`);
-        } else {
-          if(r.bottomK > g.depthMax + g.tol.depth) reasons.push(`하강 시 무릎 각도가 ${r.bottomK.toFixed(0)}°까지만 굽혀져 가동범위가 부족합니다 (기준 ${g.depthMax}° 이하)`);
-          if(r.topK > g.lockoutMin + g.tol.lockout) reasons.push(`상승 시 무릎이 ${r.topK.toFixed(0)}°까지 완전히 펴졌습니다 — 락아웃 부상 위험 (기준 ${g.lockoutMin}° 미만에서 정지)`);
-        }
-        if(r.asymMax > g.asymMax + g.tol.asym) reasons.push(`좌우 무릎 각도 비대칭 최대 ${r.asymMax.toFixed(0)}° (기준 ${g.asymMax}° 이내)`);
-        const valgusRatio = r.frameCount ? r.valgusFrames / r.frameCount : 0;
-        if(valgusRatio > VALGUS_RATIO_MAX) reasons.push(`이번 반복의 ${(valgusRatio*100).toFixed(0)}% 구간에서 무릎이 안쪽으로 모였습니다 (Valgus)`);
-        if(r.eccMax > g.eccMax + g.tol.ecc) reasons.push(`하강 최대 각속도 ${r.eccMax.toFixed(0)}°/s — 통제되지 않은 빠른 하강 (기준 ${g.eccMax}°/s 이내)`);
-        if(r.conMax > g.conMax + g.tol.con) reasons.push(`상승 최대 각속도 ${r.conMax.toFixed(0)}°/s — 반동 사용 가능성 (기준 ${g.conMax}°/s 이내)`);
-        return { r, reasons, valgusRatio };
+        const ev = repReasonsFor(r);
+        return { r, reasons: ev.reasons, valgusRatio: ev.valgusRatio };
       });
-
-      // 여러 회 중 기준에 가장 근접하게 수행된(위반 항목이 가장 적은) 1회를 대표로 채택해 판정합니다.
+      // 기준에 가장 근접한 1회를 대표로 채택
       evaluated.sort((a,b)=> a.reasons.length - b.reasons.length);
       const best = evaluated[0];
-
       return {
         lift, verdict: best.reasons.length === 0 ? '인정' : '불인정', reasons: best.reasons,
         bottom: { kneeAngleL: best.r.bottomKL, kneeAngleR: best.r.bottomKR },
@@ -1190,32 +1242,24 @@
       const pillClass = unclear ? 'verdict-warn' : (ok ? 'verdict-ok' : 'verdict-bad');
       const pillLabel = unclear ? '⚠ 판정불가' : (ok ? '✓ 인정' : '✕ 불인정');
       const repNote = result.repCount
-        ? `<p class="hint" style="margin:10px 0 0;">영상에서 감지된 전체 반복 동작 <b>${result.repCount}회</b> 중, 가이드라인 기준에 가장 가깝게 수행된 1회를 기준으로 판정했습니다.</p>` : '';
+        ? `<p class="hint" style="margin:10px 0 0;">감지된 반복 <b>${result.repCount}회</b> 중 기준에 가장 가까운 1회로 판정했습니다.</p>` : '';
       el('verdictBox').innerHTML = `
         <div class="verdict-pill ${pillClass}">${pillLabel}</div>
         ${(!ok) ? `<ul class="reason-list">${result.reasons.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ul>` : ''}
         ${repNote}
         ${result.repCount ? `<div class="phase-result">
           <div class="angle-tile"><div class="k">하강 최저 무릎 각도 (좌/우)</div><div class="v">${(result.bottom.kneeAngleL||0).toFixed(0)}° / ${(result.bottom.kneeAngleR||0).toFixed(0)}°</div></div>
-          <div class="angle-tile"><div class="k">상승 최대 무릎 각도 (좌/우)</div><div class="v">${(result.top.kneeAngleL||0).toFixed(0)}° / ${(result.top.kneeAngleR||0).toFixed(0)}°</div></div>
-          ${m.maxEccVel!==undefined ? `<div class="angle-tile"><div class="k">하강 최대 속도</div><div class="v">${m.maxEccVel.toFixed(0)}°/s</div></div>` : ''}
-          ${m.maxConVel!==undefined ? `<div class="angle-tile"><div class="k">상승 최대 속도</div><div class="v">${m.maxConVel.toFixed(0)}°/s</div></div>` : ''}
-          ${m.maxAsym!==undefined ? `<div class="angle-tile"><div class="k">좌우 비대칭 최대</div><div class="v">${m.maxAsym.toFixed(0)}°</div></div>` : ''}
-          ${m.valgusRatio!==undefined ? `<div class="angle-tile"><div class="k">Valgus 감지 구간(해당 반복 내)</div><div class="v">${(m.valgusRatio*100).toFixed(0)}%</div></div>` : ''}
+          ${m.valgusRatio!==undefined ? `<div class="angle-tile"><div class="k">무릎 안쏠림 감지 구간(해당 반복 내)</div><div class="v">${(m.valgusRatio*100).toFixed(0)}%</div></div>` : ''}
         </div>` : ''}`;
     }
 
     function finishAnalysis(){
-      state.analyzing = false;
-      if(state.rafId) cancelAnimationFrame(state.rafId);
-      el('startBtn').disabled = false;
-      el('stopBtn').disabled = true;
-      poseBadge('분석 완료', false);
       const result = evaluateSession();
       if(!result){
-        showCamStatus('⚠ 인식된 프레임이 부족해 판정할 수 없습니다. 전신이 나오도록 다시 촬영해주세요.', false);
+        setStatus('인식된 프레임이 부족해 판정할 수 없습니다. 전신이 나오도록 다시 촬영해주세요.', 'down');
         return;
       }
+      renderCaptureGallery();
       renderVerdict(result);
       sSet(`analysis:${lift}`, JSON.stringify(result), false);
       const _m = result.motion || {};
@@ -1227,36 +1271,138 @@
         '하강 최대 속도': `${(_m.maxEccVel||0).toFixed(0)}°/s`,
         '상승 최대 속도': `${(_m.maxConVel||0).toFixed(0)}°/s`,
         '좌우 비대칭 최대': `${(_m.maxAsym||0).toFixed(0)}°`,
-        'Valgus 감지 구간': `${((_m.valgusRatio||0)*100).toFixed(0)}%`,
+        '무릎 안쏠림 감지 구간': `${((_m.valgusRatio||0)*100).toFixed(0)}%`,
         '상체 기울기 최대': `${(_m.maxLean||0).toFixed(0)}°`,
         '분석 프레임 수': _m.frameCount||0});
-      showCamStatus('✓ 자세분석이 완료되어 결과가 저장되었습니다.', true);
+      setStatus(result.verdict === '인정'
+        ? '✓ 자세분석 완료 — 결과가 저장되었습니다.'
+        : '자세분석 완료 — 아래에서 결과를 확인해주세요.', result.verdict==='인정' ? 'ok' : '');
+    }
+
+    /* ---------- 실시간 녹화 분석 ---------- */
+    async function startLive(){
+      if(liveRunning) return;
+      if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        setStatus('이 브라우저(또는 현재 접속 환경)에서는 카메라를 사용할 수 없습니다. HTTPS 주소로 접속했는지, 브라우저가 카메라를 지원하는지 확인 후 다시 시도해주세요.', 'down');
+        return;
+      }
+      try{ await ensurePose((m)=>setStatus(m)); }
+      catch(e){ setStatus('AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.', 'down'); return; }
+      setStatus('카메라 접근을 시도하는 중...');
+      let stream;
+      try{ stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }); }
+      catch(e){ setStatus('카메라 접근이 차단되었습니다. 브라우저의 카메라 권한을 허용한 뒤 다시 시도해주세요.', 'down'); return; }
+      liveStream = stream;
+      const video = el('video');
+      video.controls = false;
+      video.removeAttribute('src');
+      video.srcObject = stream;
+      video.muted = true; video.playsInline = true; video.setAttribute('playsinline', '');
+      // 일부 브라우저는 srcObject 연결 직후 videoWidth/height가 아직 0이라
+      // 캔버스 크기가 잘못 잡히거나 화면이 잠깐/계속 비어 보일 수 있어 metadata 로딩을 기다린다.
+      await new Promise((resolve)=>{
+        if(video.readyState >= 1){ resolve(); return; }
+        const onMeta = ()=>{ video.removeEventListener('loadedmetadata', onMeta); resolve(); };
+        video.addEventListener('loadedmetadata', onMeta);
+        setTimeout(resolve, 1500); // 안전장치: metadata 이벤트가 안 와도 무한 대기하지 않음
+      });
+      try{ await video.play(); }
+      catch(e){ setStatus('카메라 화면 재생을 시작하지 못했습니다. 화면을 한 번 탭한 뒤 다시 시도해주세요.', 'down'); return; }
+      fitCanvas();
+      state.srcReady = true;
+      state.aborted = false;
+      state.frames = [];
+      resetRepTracking();
+      sparkBuf = [];
+      el('verdictBox').innerHTML = '';
+      el('capBox').classList.remove('show'); el('capList').innerHTML = '';
+      liveRunning = true;
+      el('liveStartBtn').disabled = true;
+      el('liveStopBtn').disabled = false;
+      const rb = el('recBadge'); if(rb) rb.classList.add('show');
+      setStatus('세로 측면 45° 각도를 유지하며 반복 동작을 진행해주세요. 실시간으로 분석 중입니다...', 'ok');
+      let tick = 0;
+      const loop = ()=>{
+        if(!liveRunning) return;
+        tick++;
+        if(tick % 2 === 0) processFrameAt(); // 약 30fps 렌더 중 절반 빈도로 추론
+        liveRaf = requestAnimationFrame(loop);
+      };
+      loop();
+    }
+
+    function stopLive(){
+      liveRunning = false;
+      if(liveRaf) cancelAnimationFrame(liveRaf);
+      liveRaf = null;
+      if(liveStream){ liveStream.getTracks().forEach(t=>t.stop()); liveStream = null; }
+      const video = el('video');
+      video.pause(); video.srcObject = null;
+      el('liveStartBtn').disabled = false;
+      el('liveStopBtn').disabled = true;
+      const rb = el('recBadge'); if(rb) rb.classList.remove('show');
+    }
+
+    function stopLiveAndJudge(){
+      if(!liveRunning){ return; }
+      stopLive();
+      finishAnalysis();
+    }
+
+    /* ---------- 업로드 / 실시간 모드 전환 ---------- */
+    function setMode(next){
+      if(mode === next) return;
+      if(liveRunning) stopLive();
+      resetAll(true);
+      mode = next;
+      el('uploadPanel').classList.toggle('show', mode === 'upload');
+      el('livePanel').classList.toggle('show', mode === 'live');
+      el('video').controls = (mode === 'upload');
+      el('modeToggle').querySelectorAll('button').forEach(b=> b.classList.toggle('sel', b.dataset.mode === mode));
+      setStatus(mode === 'upload'
+        ? '영상 파일을 선택하면 분석이 준비됩니다. 세로 측면 45°에서 촬영한 1분 이내 영상이면 정확도가 높아집니다.'
+        : '카메라와 세로 측면 45°가 되도록 선 뒤 [AI 관절 분석 시작]을 눌러주세요.');
+    }
+    el('modeToggle').addEventListener('click', (e)=>{
+      const b = e.target.closest('button'); if(!b) return;
+      setMode(b.dataset.mode);
+    });
+
+    function resetAll(clearStatus){
+      state.aborted = true;
+      state.analyzing = false;
+      state.srcReady = false;
+      state.frames = [];
+      resetRepTracking();
+      if(liveRunning) stopLive();
+      sparkBuf = [];
+      const scv = el('sparkCanvas'); if(scv) scv.getContext('2d').clearRect(0,0,scv.width,scv.height);
+      const video = el('video');
+      video.pause(); video.srcObject = null; video.removeAttribute('src'); video.load();
+      const canvas = el('canvas');
+      canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+      el('hudPhase').textContent = '대기'; el('hudPhase').className = 'hud-chip phase';
+      el('hudAngle').textContent = '무릎 --°';
+      el('hudRep').textContent = 'REP 0';
+      el('statAngle').textContent = '--';
+      el('statBottom').textContent = '--';
+      el('statRep').textContent = '0';
+      el('capBox').classList.remove('show'); el('capList').innerHTML='';
+      el('verdictBox').innerHTML = '';
+      el('startBtn').disabled = true;
+      el('stopBtn').disabled = true;
+      el('prog').classList.remove('show'); el('progBar').style.width='0%';
+      if(clearStatus !== false) setStatus(mode === 'upload'
+        ? '영상 파일을 선택하면 분석이 준비됩니다. 세로 측면 45°에서 촬영한 1분 이내 영상이면 정확도가 높아집니다.'
+        : '카메라와 세로 측면 45°가 되도록 선 뒤 [AI 관절 분석 시작]을 눌러주세요.');
     }
 
     el('startBtn').addEventListener('click', startAnalysis);
-    el('stopBtn').addEventListener('click', ()=>{ el('video').pause(); finishAnalysis(); });
-    el('resetBtn').addEventListener('click', ()=>{
-      state.analyzing = false;
-      if(state.rafId) cancelAnimationFrame(state.rafId);
-      if(state.stream){ state.stream.getTracks().forEach(t=>t.stop()); state.stream=null; }
-      const video = el('video');
-      video.pause(); video.srcObject = null; video.removeAttribute('src'); video.load();
-      state.frames = []; state.srcReady = false; state.recording = false;
-      resetRepTracking();
-      const canvas = el('canvas'); canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-      el('camWrap').classList.remove('show');
-      el('liveTiles').style.display = 'none';
-      el('repStatus').style.display = 'none';
-      el('fbBox').style.display = 'none';
-      el('verdictBox').innerHTML = '';
-      el('fname').textContent = '';
-      el('fileInput').value = '';
-      el('recBtn').disabled = true; el('recBtn').innerHTML = '⏺ 녹화';
-      el('startBtn').disabled = true; el('stopBtn').disabled = true;
-      el('camOnBtn').disabled = false;
-      el('camStatus').className = 'status-msg';
-      poseBadge(null);
-    });
+    el('stopBtn').addEventListener('click', ()=>{ state.aborted = true; });
+    el('resetBtn').addEventListener('click', ()=> resetAll(true));
+    el('liveStartBtn').addEventListener('click', startLive);
+    el('liveStopBtn').addEventListener('click', stopLiveAndJudge);
+    el('liveResetBtn').addEventListener('click', ()=> resetAll(true));
 
     // 이전 저장 결과 복원
     (async ()=>{
@@ -1387,28 +1533,35 @@
     return stack;
   }
 
-  // 레그프레스: 중앙 발판 + 발 2개, 양쪽에 원판 스택
+  // 레그프레스: 중앙의 직사각형 발판 위에 두 발이 올라간 모습 + 양쪽 원판 스택
   function legpressSVG(totalWeight){
     const perSide = Math.max(0, totalWeight)/2;
     const stack = breakdownPlates(perSide);
     const gap = 3;
     const plateTotalW = stack.reduce((s,p)=>s+p.w+gap,0);
-    const width = 300 + plateTotalW*2;
-    const height = 170;
-    const baseY = 128;
+    const width = 320 + plateTotalW*2;
+    const height = 190;
+    const baseY = 158;
     const cx = width/2;
     let svg = `<svg width="${Math.min(width,600)}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
-    // 슬레드 레일(중앙)
-    svg += `<rect x="${cx-78}" y="${baseY-6}" width="156" height="10" rx="3" fill="#5a5a66"/>`;
-    // 중앙 발판(비스듬한 판)
-    const py = baseY-58;
-    svg += `<rect x="${cx-46}" y="${py}" width="92" height="18" rx="5" fill="#7a7a86" transform="rotate(-18 ${cx} ${py+9})"/>`;
-    // 발판 위에 올라간 두 발
-    svg += `<ellipse cx="${cx-18}" cy="${py-11}" rx="11" ry="18" fill="#c7c6d1" transform="rotate(-18 ${cx-18} ${py-11})"/>`;
-    svg += `<ellipse cx="${cx+18}" cy="${py-19}" rx="11" ry="18" fill="#e8e7e2" transform="rotate(-18 ${cx+18} ${py-19})"/>`;
+    // 프레임 레일 (발판 뒤 기둥 두 개)
+    svg += `<rect x="${cx-66}" y="18" width="9" height="${baseY-18}" rx="3" fill="#8b8a95"/>`;
+    svg += `<rect x="${cx+57}" y="18" width="9" height="${baseY-18}" rx="3" fill="#8b8a95"/>`;
+    // 바닥 레일
+    svg += `<rect x="${cx-88}" y="${baseY-6}" width="176" height="10" rx="3" fill="#5a5a66"/>`;
+    // 중앙 발판 — 직사각형 판(정면)
+    svg += `<rect x="${cx-52}" y="24" width="104" height="104" rx="9" fill="#7a7a86" stroke="#5a5a66" stroke-width="2"/>`;
+    svg += `<rect x="${cx-44}" y="32" width="88" height="88" rx="6" fill="#8b8a95"/>`;
+    // 발판 위에 올라간 두 발 (발바닥이 보이는 모습)
+    [-1,1].forEach(dir=>{
+      const fx = cx + dir*22;
+      svg += `<rect x="${fx-12}" y="46" width="24" height="52" rx="12" fill="#e8e7e2" stroke="#c7c6d1" stroke-width="1.5"/>`;   // 발바닥
+      svg += `<ellipse cx="${fx}" cy="46" rx="11" ry="9" fill="#e8e7e2" stroke="#c7c6d1" stroke-width="1.5"/>`;                 // 앞꿈치
+      svg += `<ellipse cx="${fx}" cy="100" rx="9" ry="7" fill="#c7c6d1"/>`;                                                     // 뒤꿈치
+    });
     // 양쪽 페그 + 원판 스택
     [-1,1].forEach(dir=>{
-      const pegX = cx + dir*84;
+      const pegX = cx + dir*94;
       svg += `<rect x="${dir>0?pegX:pegX-10}" y="${baseY-4}" width="10" height="6" fill="#5a5a66"/>`;
       let cursor = pegX + dir*8;
       stack.forEach(p=>{
@@ -1421,7 +1574,7 @@
     return svg;
   }
 
-  // 스쿼트: 두꺼운 체형의 사람 실루엣 + 양쪽 원판
+  // 스쿼트: 서 있는 사람이 어깨에 바벨을 짊어진 모습 — 바 양쪽 슬리브에 원판이 끼워지는 그림
   function squatSVG(totalWeight){
     const barKg = 20;
     const usable = Math.max(0, totalWeight-barKg);
@@ -1429,34 +1582,40 @@
     const stack = breakdownPlates(perSide);
     const gap = 3;
     const plateTotalW = stack.reduce((s,p)=>s+p.w+gap,0);
-    const width = 240 + plateTotalW*2;
-    const height = 185;
-    const barY = 50;
+    const width = 260 + plateTotalW*2;
+    const height = 200;
+    const barY = 56; // 어깨 높이의 바
     let svg = `<svg width="${Math.min(width,600)}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
     const cx = width/2;
-    // 바
-    svg += `<rect x="${cx-64}" y="${barY-4}" width="128" height="8" rx="2" fill="#5a5a66"/>`;
-    // 양쪽 슬리브 + 원판
+    // 사람 — 서 있는 자세 (머리는 바 위, 바는 어깨 뒤에 걸침)
+    svg += `<circle cx="${cx}" cy="${barY-20}" r="13" fill="#e8e7e2"/>`;                          // 머리
+    svg += `<rect x="${cx-5}" y="${barY-9}" width="10" height="10" fill="#e8e7e2"/>`;             // 목
+    svg += `<rect x="${cx-15}" y="${barY-2}" width="30" height="66" rx="13" fill="#e8e7e2"/>`;    // 몸통(서 있음)
+    // 바 (어깨 뒤에 가로로 걸침)
+    svg += `<rect x="${cx-70}" y="${barY-4}" width="140" height="8" rx="2" fill="#5a5a66"/>`;
+    // 팔 — 어깨에서 바깥쪽 위로 뻗어 바를 잡음
+    svg += `<path d="M ${cx-10} ${barY+10} L ${cx-36} ${barY} M ${cx+10} ${barY+10} L ${cx+36} ${barY}" stroke="#e8e7e2" stroke-width="10" stroke-linecap="round" fill="none"/>`;
+    svg += `<circle cx="${cx-36}" cy="${barY}" r="6" fill="#c7c6d1"/><circle cx="${cx+36}" cy="${barY}" r="6" fill="#c7c6d1"/>`; // 손
+    // 곧게 선 다리
+    svg += `<path d="M ${cx-8} ${barY+62} L ${cx-10} ${barY+128} M ${cx+8} ${barY+62} L ${cx+10} ${barY+128}" stroke="#e8e7e2" stroke-width="13" stroke-linecap="round" fill="none"/>`;
+    // 발
+    svg += `<rect x="${cx-24}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/><rect x="${cx}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/>`;
+    // 양쪽 슬리브 + 원판 (바 끝에 끼워지는 모습)
     [-1,1].forEach(dir=>{
-      let cursor = cx + dir*64;
-      const sleeveW=18;
+      let cursor = cx + dir*70;
+      const sleeveW=16;
       svg += `<rect x="${dir>0?cursor:cursor-sleeveW}" y="${barY-6}" width="${sleeveW}" height="12" rx="2" fill="#7a7a86"/>`;
       cursor += dir*sleeveW;
       stack.forEach(p=>{
         const px = dir>0?cursor:cursor-p.w;
-        svg += `<rect x="${px}" y="${barY-p.h/2}" width="${p.w}" height="${p.h}" rx="3" fill="${p.color}" stroke="#00000055"/>`;
+        svg += `<rect x="${px}" y="${barY-p.h/2}" width="${p.w}" height="${p.h}" rx="4" fill="${p.color}" stroke="#00000055"/>`;
+        svg += `<rect x="${px+p.w/2-1.5}" y="${barY-p.h/2+4}" width="3" height="${p.h-8}" rx="1.5" fill="#ffffff22"/>`; // 원판 하이라이트
         cursor += dir*(p.w+gap);
       });
+      // 조임쇠(칼라)
+      const collarX = dir>0 ? cursor+1 : cursor-6;
+      svg += `<rect x="${collarX}" y="${barY-7}" width="5" height="14" rx="2" fill="#5a5a66"/>`;
     });
-    // 사람(두꺼운 실루엣)
-    svg += `<circle cx="${cx}" cy="${barY+24}" r="14" fill="#e8e7e2"/>`;                       // 머리
-    svg += `<rect x="${cx-13}" y="${barY+36}" width="26" height="34" rx="12" fill="#e8e7e2"/>`; // 몸통
-    // 팔 (바를 잡음)
-    svg += `<path d="M ${cx-8} ${barY+42} L ${cx-30} ${barY+8} M ${cx+8} ${barY+42} L ${cx+30} ${barY+8}" stroke="#e8e7e2" stroke-width="10" stroke-linecap="round" fill="none"/>`;
-    // 굽힌 다리 (허벅지·종아리 두껍게)
-    svg += `<path d="M ${cx-7} ${barY+68} L ${cx-30} ${barY+94} L ${cx-25} ${barY+128} M ${cx+7} ${barY+68} L ${cx+30} ${barY+94} L ${cx+25} ${barY+128}" stroke="#e8e7e2" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
-    // 발
-    svg += `<rect x="${cx-37}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/><rect x="${cx+13}" y="${barY+126}" width="24" height="9" rx="3" fill="#8b8a95"/>`;
     svg += `</svg>`;
     return svg;
   }
@@ -1827,13 +1986,46 @@
         const lpLevel = strengthLevel('legpress', latest.gender, latest.legpress/body.weight);
         levelLine = `<br>체중 대비 수준: 스쿼트 <b>${sqLevel}</b> · 레그프레스 <b>${lpLevel}</b>`;
       }
-      secs.push(`<div class="sum-sec"><h3><span class="num">04</span>비교분석 · 운동처방</h3>
-        <p>레그프레스÷스쿼트 배율 <b>${ratio.toFixed(2)}×</b> — ${ratioNote}${levelLine}<br>
-        <span style="font-size:11.5px;color:var(--text-faint);">세부 운동처방(수준별 세트·강도, 주간 배치)은 [04 비교분석] 탭에서 [편차 분석하기] 실행 후 확인할 수 있습니다.</span></p>
+      secs.push(`<div class="sum-sec"><h3><span class="num">04</span>비교분석</h3>
+        <p>레그프레스÷스쿼트 배율 <b>${ratio.toFixed(2)}×</b> — ${ratioNote}${levelLine}</p>
       </div>`);
+
+      // ---- 운동처방 요약 (별도 칸) ----
+      if(body && body.weight){
+        const sqLv = strengthLevel('squat', latest.gender, latest.squat/body.weight);
+        const lpLv = strengthLevel('legpress', latest.gender, latest.legpress/body.weight);
+        const order = ['입문','초급~중급','중급~상급','상급 이상'];
+        const level = order[Math.min(order.indexOf(sqLv), order.indexOf(lpLv))];
+        const planRows = LEVEL_PLAN[level].map(r=>
+          `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('');
+        // 자세분석 결과에서 보완 포인트 추출
+        const allReasons = ((lpA&&lpA.reasons)||[]).join(' ') + ' ' + ((sqA&&sqA.reasons)||[]).join(' ');
+        const focus = [];
+        if(allReasons.includes('Valgus') || allReasons.includes('안쪽')) focus.push('무릎 정렬 교정(밴드 스쿼트·클램쉘)');
+        if(allReasons.includes('가동범위') || allReasons.includes('깊이')) focus.push('가동범위 확보(고블릿·박스 스쿼트)');
+        if(allReasons.includes('비대칭')) focus.push('좌우 불균형 보완(편측 운동)');
+        if(allReasons.includes('락아웃')) focus.push('락아웃 전 멈춤 연습');
+        if(allReasons.includes('속도') || allReasons.includes('반동')) focus.push('템포 컨트롤(3-1-1)');
+        if(ratio < 1.5) focus.push('레그프레스 보조 세트 병행');
+        if(ratio > 2.0) focus.push('코어·스쿼트 숙련도 보강');
+        const focusLine = focus.length
+          ? `보완 포인트: <b>${focus.join(' · ')}</b>. `
+          : '현재 자세·기록 모두 양호합니다 — 점진적 과부하 원리로 소폭씩 증량하세요. ';
+        secs.push(`<div class="sum-sec"><h3><span class="num">Rx</span>운동처방 요약</h3>
+          <p>현재 수준 <b style="color:var(--accent);">${level}</b> 기준의 처방입니다. ${focusLine}
+          하체 최대 근력 훈련 사이에는 48~72시간 회복을 두고, 훈련 전후 준비운동·정리운동을 병행하세요.</p>
+          <table class="plan-table">
+            <thead><tr><th>목적</th><th>강도</th><th>세트×반복</th><th>휴식</th><th>빈도</th></tr></thead>
+            <tbody>${planRows}</tbody>
+          </table>
+        </div>`);
+      } else {
+        secs.push(`<div class="sum-sec"><h3><span class="num">Rx</span>운동처방 요약</h3>
+          <p>키·몸무게 정보가 있으면 수준별 세트·강도 처방이 표로 요약됩니다. [03 기록·등급]에서 몸무게를 입력해 기록을 저장해주세요.</p></div>`);
+      }
     } else {
       secs.push(`<div class="sum-sec"><h3><span class="num">04</span>비교분석 · 운동처방</h3>
-        <p>기록 저장 후 비교분석 결과가 이곳에 요약됩니다.</p></div>`);
+        <p>기록 저장 후 비교분석 결과와 운동처방 요약이 이곳에 표시됩니다.</p></div>`);
     }
 
     // 종합 코멘트
@@ -1842,7 +2034,7 @@
       const poseDone = lpA || sqA;
       let comment;
       if(poseOk) comment = '자세와 기록 모두 안정적으로 측정되었습니다. 현재 자세 기준을 유지하며 점진적으로 중량을 늘려가세요.';
-      else if(poseDone) comment = '기록은 저장되었지만 자세분석에서 개선점이 발견되었습니다. [04 비교분석] 탭의 운동처방을 참고해 자세를 먼저 교정한 뒤 중량을 올리는 것을 권장합니다.';
+      else if(poseDone) comment = '기록은 저장되었지만 자세분석에서 개선점이 발견되었습니다. 위 [운동처방 요약]을 참고해 자세를 먼저 교정한 뒤 중량을 올리는 것을 권장합니다.';
       else comment = '기록이 저장되었습니다. [02 자세분석] 탭에서 AI 자세분석까지 완료하면 더 정확한 종합 평가와 운동처방을 받을 수 있습니다.';
       secs.push(`<div class="analysis-box"><b>종합 소견</b> — ${comment}</div>`);
     }
