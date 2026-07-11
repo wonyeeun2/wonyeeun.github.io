@@ -60,9 +60,9 @@
     color:var(--text-dim);background:var(--surface-2);transition:all .15s;}
   .radio-opt.sel{border-color:var(--accent);color:var(--text);background:rgba(255,90,54,.12);}
 
-  button.btn{font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:8px;padding:11px 16px;cursor:pointer;
-    transition:filter .15s, transform .1s, opacity .15s;}
-  button.btn:active{transform:scale(.98);}
+  .btn{font-family:'Inter',sans-serif;font-weight:700;font-size:12.5px;border:none;border-radius:10px;padding:11px 16px;cursor:pointer;
+    appearance:none;-webkit-appearance:none;transition:filter .15s, transform .1s, opacity .15s;box-sizing:border-box;}
+  .btn:active{transform:scale(.98);}
   button.btn:disabled{opacity:.4;cursor:not-allowed;}
   .btn-primary{background:var(--accent);color:#1a0f0a;}
   .btn-primary:hover:not(:disabled){filter:brightness(1.08);}
@@ -85,6 +85,9 @@
   @supports (aspect-ratio:3/4){ .cam-wrap::before{content:none;} }
   .cam-wrap video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000;}
   .cam-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:2;background:transparent;}
+  .cam-placeholder{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;display:flex;align-items:center;justify-content:center;
+    text-align:center;padding:24px;color:rgba(255,255,255,.7);font-size:12.5px;line-height:1.6;background:#000;}
+  .cam-placeholder.hide{display:none;}
   .cam-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;z-index:2;}
   .hud-chip{background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.18);color:#fff;padding:5px 9px;font-size:11px;
     font-weight:700;border-radius:8px;font-family:'IBM Plex Mono',monospace;}
@@ -220,9 +223,22 @@
   .analysis-box.warn{border-left-color:var(--danger);}
 
   .rx-card{display:flex;gap:12px;padding:14px;background:var(--surface-2);border-radius:10px;margin-bottom:8px;border:1px solid var(--border);}
+  .rx-card.priority{border-color:var(--accent);background:rgba(255,90,54,.06);}
   .rx-card .ic{font-size:20px;}
-  .rx-card h4{margin:0 0 3px;font-size:13px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
+  .rx-card .rx-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px;}
+  .rx-card h4{margin:0;font-size:13px;font-family:'Oswald',sans-serif;text-transform:uppercase;letter-spacing:.02em;}
   .rx-card p{margin:0;font-size:12px;color:var(--text-dim);line-height:1.55;}
+  .rx-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;white-space:nowrap;}
+  .rx-badge.top{background:var(--accent);color:#1a0f0a;}
+  .rx-badge.aux{background:var(--surface-3);color:var(--text-dim);}
+  .rx-badge.common{background:rgba(29,116,181,.15);color:var(--accent-blue);}
+  .rx-tags{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px;}
+  .rx-tag{font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 8px;}
+  .rx-tag b{color:var(--text);}
+  .rx-priority-note{display:flex;gap:10px;align-items:flex-start;background:rgba(255,90,54,.08);border:1px solid rgba(255,90,54,.35);
+    border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:var(--text-dim);line-height:1.6;}
+  .rx-priority-note .pin{font-size:16px;flex-shrink:0;}
+  .rx-priority-note b{color:var(--accent);}
 
   .stat-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
   @media(max-width:640px){.stat-tiles{grid-template-columns:1fr 1fr;}}
@@ -249,7 +265,6 @@
   .privacy-note{font-size:11px;color:var(--text-faint);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
 
   /* ---- pose analyzer (v2) ---- */
-  .cam-wrap video{max-height:420px;}
 
   /* ---- 업로드/실시간 모드 전환 ---- */
   .mode-toggle{display:flex;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:4px;margin:14px 0 12px;}
@@ -430,37 +445,6 @@
       <div id="sqThreshWrap"></div>
     </div>
 
-    <div class="card" id="gradeResultCard" style="display:none;">
-      <h2>등급 결과 · 무게 적재</h2>
-      <div class="legend-row">
-        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-red);"></span>20kg</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-yellow);"></span>10kg</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-green);"></span>5kg</div>
-        <div class="legend-item"><span class="legend-swatch" style="background:var(--plate-gray);"></span>2.5kg</div>
-      </div>
-
-      <div class="result-row">
-        <div class="grade-badge" id="lpGradeBadge">-</div>
-        <div class="info">
-          <div class="lift-name">레그프레스 1RM</div>
-          <div class="weight" id="lpWeightDisp">- kg</div>
-          <div class="grade-label" id="lpGradeLabel"></div>
-        </div>
-      </div>
-      <p class="plate-title">레그프레스 무게 적재 <span class="pt-grade" id="lpPlateGrade"></span></p>
-      <div class="plate-wrap" id="lpPlateWrap"></div>
-
-      <div class="result-row">
-        <div class="grade-badge" id="sqGradeBadge">-</div>
-        <div class="info">
-          <div class="lift-name">스쿼트 1RM</div>
-          <div class="weight" id="sqWeightDisp">- kg</div>
-          <div class="grade-label" id="sqGradeLabel"></div>
-        </div>
-      </div>
-      <p class="plate-title">스쿼트 무게 적재 <span class="pt-grade" id="sqPlateGrade"></span></p>
-      <div class="plate-wrap" id="sqPlateWrap"></div>
-    </div>
   </section>
 
   <!-- ===================== TAB 4 ===================== -->
@@ -524,12 +508,31 @@
       <div class="analysis-box" id="deviationText"></div>
     </div>
 
+    <div class="card" id="cvCard" style="display:none;">
+      <h2>개인 기록 변동성(CV) 분석</h2>
+      <p class="hint">동일 인물이 저장한 기록이 <b>3회 이상</b>일 때, 종목별 평균·표준편차·변동계수(CV = 표준편차÷평균×100)를 계산합니다. 절대 kg 편차만 보면 체급·기록 크기에 따라 왜곡되므로, 처방 판단 기준은 상대지표인 CV(%)로 설정했습니다.</p>
+      <div class="formula-box">CV(%) = 표준편차 ÷ 평균 × 100</div>
+      <table class="thresh-table">
+        <thead><tr><th>구간</th><th>CV</th><th>해석</th></tr></thead>
+        <tbody>
+          <tr><td class="g-name">안정</td><td>4% 미만</td><td>회차 간 기록이 일관적</td></tr>
+          <tr><td class="g-name">보통</td><td>4% ~ 8%</td><td>정상 범위의 변동</td></tr>
+          <tr><td class="g-name">높음</td><td>8% 이상</td><td>회차 간 편차가 커 보강 필요</td></tr>
+        </tbody>
+      </table>
+      <div class="ratio-grid" id="cvGrid"></div>
+      <div class="analysis-box" id="cvText"></div>
+    </div>
+
     <div class="card" id="rxCard" style="display:none;">
       <h2>운동 처방</h2>
       <p class="hint">기록·자세분석 결과 기반의 맞춤 처방으로, FITT 원리(빈도·강도·시간·형태)에 따라 구성했습니다.</p>
+      <div id="rxPriorityNote"></div>
       <div id="rxLevelPlan"></div>
+      <div id="rxPeriodization"></div>
       <div id="rxList" style="margin-top:14px;"></div>
       <div id="rxWeekPlan"></div>
+      <div id="rxEvidence"></div>
     </div>
   </section>
 
@@ -830,8 +833,9 @@
       </div>
 
       <div class="cam-wrap" id="${prefix}-camWrap">
-        <video id="${prefix}-video" controls playsinline muted></video>
+        <video id="${prefix}-video" controls playsinline autoplay muted></video>
         <canvas id="${prefix}-canvas"></canvas>
+        <div class="cam-placeholder" id="${prefix}-camPlaceholder">📁 영상을 선택하면 여기에 미리보기가 표시됩니다</div>
         <div class="cam-hud">
           <div class="hud-chip phase" id="${prefix}-hudPhase">대기</div>
           <div class="hud-chip" id="${prefix}-hudAngle">무릎 --°</div>
@@ -871,6 +875,18 @@
     let mode = 'upload';
     let liveStream = null, liveRunning = false, sparkBuf = [];
     let mediaRecorder = null, liveChunks = [], liveRecordedUrl = null;
+
+    // 영상/카메라가 아직 준비되지 않아 화면이 그냥 검게만 보일 때, 이유를 안내하는 오버레이 문구
+    function showPlaceholder(msg){
+      const p = el('camPlaceholder');
+      if(!p) return;
+      p.textContent = msg;
+      p.classList.remove('hide');
+    }
+    function hidePlaceholder(){
+      const p = el('camPlaceholder');
+      if(p) p.classList.add('hide');
+    }
 
     // 반복(rep) 단위로 동작을 나누어 추적 — 실제 감지된 반복 구간만 판정에 사용
     function newRepAccumulator(){
@@ -1012,6 +1028,7 @@
       state.aborted = true; // 진행 중인 분석 중단
       resetAll(false);
       const video = el('video');
+      showPlaceholder(`"${f.name}" 영상을 불러오는 중...`);
       video.src = URL.createObjectURL(f);
       video.load();
       setStatus(`"${f.name}" 영상을 불러오는 중...`);
@@ -1019,6 +1036,14 @@
       video.onloadedmetadata = async ()=>{
         fitCanvas();
         state.srcReady = true;
+        // 일부 브라우저는 재생을 한 번도 안 하면 첫 프레임을 그리지 않고 계속 검게 보여준다.
+        // 아주 짧게 재생했다가 바로 멈춰서 첫 프레임을 화면에 강제로 그리게 한다.
+        try{
+          video.muted = true;
+          await video.play();
+          video.pause();
+        }catch(e){}
+        hidePlaceholder();
         try{
           await ensurePose((m)=>setStatus(m));
           const dur = video.duration || 0;
@@ -1030,6 +1055,10 @@
         }catch(e){
           setStatus('AI 모델을 불러오지 못했습니다 (네트워크 문제일 수 있어요). 잠시 후 다시 시도해주세요.', 'down');
         }
+      };
+      video.onerror = ()=>{
+        showPlaceholder('영상을 불러오지 못했습니다. 다른 영상 파일로 다시 시도해주세요.');
+        setStatus('영상을 불러오지 못했습니다. 형식을 지원하지 않거나 손상된 파일일 수 있습니다.', 'down');
       };
     });
 
@@ -1146,6 +1175,7 @@
       catch(e){ setStatus('AI 관절 인식 모델을 불러오지 못했습니다. 네트워크 확인 후 다시 시도해주세요.', 'down'); return; }
       const video = el('video');
       if(!video.videoWidth){ setStatus('영상을 아직 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'down'); return; }
+      hidePlaceholder();
 
       state.analyzing = true;
       state.aborted = false;
@@ -1296,17 +1326,30 @@
     async function startLive(){
       if(liveRunning) return;
       if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+        showPlaceholder('이 브라우저(또는 현재 접속 환경)에서는 카메라를 사용할 수 없습니다.');
         setStatus('이 브라우저(또는 현재 접속 환경)에서는 카메라를 사용할 수 없습니다. HTTPS 주소로 접속했는지, 브라우저가 카메라를 지원하는지 확인 후 다시 시도해주세요.', 'down');
         return;
       }
       if(!window.MediaRecorder){
+        showPlaceholder('이 브라우저는 영상 녹화 기능을 지원하지 않습니다.');
         setStatus('이 브라우저는 영상 녹화 기능(MediaRecorder)을 지원하지 않습니다. 최신 크롬·사파리 등에서 다시 시도해주세요.', 'down');
         return;
       }
+      showPlaceholder('카메라 접근을 시도하는 중입니다...');
       setStatus('카메라 접근을 시도하는 중...');
       let stream;
-      try{ stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false }); }
-      catch(e){ setStatus('카메라 접근이 차단되었습니다. 브라우저의 카메라 권한을 허용한 뒤 다시 시도해주세요.', 'down'); return; }
+      try{
+        stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
+      }catch(e1){
+        // 지정한 카메라(전면)를 찾지 못하는 기기(예: 후면 카메라만 있는 기기)를 위한 대체 시도
+        try{
+          stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:false });
+        }catch(e2){
+          showPlaceholder('카메라 접근이 차단되었거나 사용 가능한 카메라가 없습니다.');
+          setStatus('카메라 접근이 차단되었습니다. 브라우저의 카메라 권한을 허용한 뒤 다시 시도해주세요.', 'down');
+          return;
+        }
+      }
       liveStream = stream;
       const video = el('video');
       video.controls = false;
@@ -1323,7 +1366,13 @@
         setTimeout(resolve, 1500); // 안전장치: metadata 이벤트가 안 와도 무한 대기하지 않음
       });
       try{ await video.play(); }
-      catch(e){ setStatus('카메라 화면 재생을 시작하지 못했습니다. 화면을 한 번 탭한 뒤 다시 시도해주세요.', 'down'); return; }
+      catch(e){
+        showPlaceholder('카메라 화면 재생을 시작하지 못했습니다. 화면을 한 번 탭해주세요.');
+        setStatus('카메라 화면 재생을 시작하지 못했습니다. 화면을 한 번 탭한 뒤 다시 시도해주세요.', 'down');
+        stream.getTracks().forEach(t=>t.stop()); liveStream = null;
+        return;
+      }
+      hidePlaceholder();
       fitCanvas();
 
       liveChunks = [];
@@ -1404,6 +1453,7 @@
       video.srcObject = null;
       video.src = liveRecordedUrl;
       video.load();
+      showPlaceholder('녹화된 영상을 불러오는 중...');
       setStatus('녹화된 영상을 불러오는 중...');
 
       await new Promise((resolve)=>{
@@ -1411,6 +1461,8 @@
         video.addEventListener('loadedmetadata', onMeta);
         setTimeout(resolve, 3000); // 안전장치
       });
+      try{ video.muted = true; await video.play(); video.pause(); }catch(e){}
+      hidePlaceholder();
       fitCanvas();
       state.srcReady = true;
       state.aborted = false;
@@ -1437,6 +1489,9 @@
       el('livePanel').classList.toggle('show', mode === 'live');
       el('video').controls = (mode === 'upload');
       el('modeToggle').querySelectorAll('button').forEach(b=> b.classList.toggle('sel', b.dataset.mode === mode));
+      showPlaceholder(mode === 'upload'
+        ? '📁 영상을 선택하면 여기에 미리보기가 표시됩니다'
+        : '🎥 [AI 관절 분석 시작]을 누르면 카메라 화면이 표시됩니다');
       setStatus(mode === 'upload'
         ? '영상 파일을 선택하면 분석이 준비됩니다. 세로 측면 45°에서 촬영한 1분 이내 영상이면 정확도가 높아집니다.'
         : '카메라와 세로 측면 45°가 되도록 선 뒤 [AI 관절 분석 시작]을 눌러주세요.');
@@ -1457,6 +1512,9 @@
       const scv = el('sparkCanvas'); if(scv) scv.getContext('2d').clearRect(0,0,scv.width,scv.height);
       const video = el('video');
       video.pause(); video.srcObject = null; video.removeAttribute('src'); video.load();
+      showPlaceholder(mode === 'upload'
+        ? '📁 영상을 선택하면 여기에 미리보기가 표시됩니다'
+        : '🎥 [AI 관절 분석 시작]을 누르면 카메라 화면이 표시됩니다');
       const canvas = el('canvas');
       canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
       el('hudPhase').textContent = '대기'; el('hudPhase').className = 'hud-chip phase';
@@ -1715,23 +1773,6 @@
     if(sq){
       document.getElementById('sqThreshWrap').innerHTML = renderSquatStdTable(gender, bw, sq);
     }
-    if(lp && sq){
-      const ratio = lp/bw;
-      const lpGrade = lpGradeFromRatio(gender, ratio);
-      const sqGrade = squatGradeFromRow(nearestSquatRow(gender, bw), sq);
-      document.getElementById('gradeResultCard').style.display = 'block';
-      document.getElementById('lpWeightDisp').textContent = lp + ' kg';
-      document.getElementById('sqWeightDisp').textContent = sq + ' kg';
-      document.getElementById('lpGradeLabel').textContent = GRADE_NAMES[lpGrade];
-      document.getElementById('sqGradeLabel').textContent = GRADE_NAMES[sqGrade];
-      const lpBadge = document.getElementById('lpGradeBadge'); const sqBadge = document.getElementById('sqGradeBadge');
-      lpBadge.textContent = lpGrade+'등급'; lpBadge.className = 'grade-badge g'+lpGrade; lpBadge.style.fontSize='12px';
-      sqBadge.textContent = sqGrade+'등급'; sqBadge.className = 'grade-badge g'+sqGrade; sqBadge.style.fontSize='12px';
-      document.getElementById('lpPlateGrade').textContent = '— ' + lpGrade + '등급';
-      document.getElementById('sqPlateGrade').textContent = '— ' + sqGrade + '등급';
-      document.getElementById('lpPlateWrap').innerHTML = legpressSVG(lp);
-      document.getElementById('sqPlateWrap').innerHTML = squatSVG(sq);
-    }
   }
   ['inLegpress','inSquat','inGradeWeight'].forEach(id=>{
     document.getElementById(id).addEventListener('input', recalcGrades);
@@ -1851,6 +1892,47 @@
     return '상급 이상';
   }
 
+  /* ---------- 개인 기록 표준편차·변동계수(CV) 분석 ----------
+     동일인이 저장한 기록이 3회 이상일 때만 계산합니다. CV(%) = 표준편차 ÷ 평균 × 100
+     절대 kg 편차는 체급·기록 크기에 따라 왜곡되므로, 처방 판단은 상대지표인 CV(%) 기준으로 합니다.
+     (mean/stdev 함수는 아래 TAB 6 통계 섹션에 선언되어 있으며, 함수 선언이므로 호이스팅되어 여기서도 사용 가능) */
+  function cvLevel(cv){ return cv >= 8 ? '높음' : (cv >= 4 ? '보통' : '안정'); }
+  function personalVariability(records){
+    if(!records || records.length < 3) return null;
+    const sqVals = records.map(r=>r.squat).filter(v=>typeof v === 'number' && !isNaN(v));
+    const lpVals = records.map(r=>r.legpress).filter(v=>typeof v === 'number' && !isNaN(v));
+    if(sqVals.length < 3 || lpVals.length < 3) return null;
+    const sqMean = mean(sqVals), sqStd = stdev(sqVals), sqCV = sqMean ? (sqStd / sqMean * 100) : 0;
+    const lpMean = mean(lpVals), lpStd = stdev(lpVals), lpCV = lpMean ? (lpStd / lpMean * 100) : 0;
+    return {
+      n: records.length,
+      sq: { mean: sqMean, std: sqStd, cv: sqCV, label: cvLevel(sqCV) },
+      lp: { mean: lpMean, std: lpStd, cv: lpCV, label: cvLevel(lpCV) }
+    };
+  }
+  function cvColor(label){ return label==='높음' ? 'var(--danger)' : (label==='보통' ? 'var(--accent-gold)' : 'var(--accent-green)'); }
+  function renderCVAnalysis(cv, recordCount){
+    document.getElementById('cvCard').style.display = 'block';
+    const gridEl = document.getElementById('cvGrid');
+    const textEl = document.getElementById('cvText');
+    if(!cv){
+      gridEl.innerHTML = '';
+      textEl.innerHTML = `표준편차·CV 계산에는 동일 인물의 저장 기록이 <b>최소 3회</b> 필요합니다. 현재 저장된 기록은 <b>${recordCount}건</b>입니다. [03 기록·등급] 탭에서 1RM을 추가로 측정해 저장해주세요.`;
+      return;
+    }
+    gridEl.innerHTML = `
+      <div class="ratio-cell"><div class="k">스쿼트 평균</div><div class="v">${cv.sq.mean.toFixed(1)}kg</div></div>
+      <div class="ratio-cell"><div class="k">스쿼트 표준편차</div><div class="v">±${cv.sq.std.toFixed(1)}kg</div></div>
+      <div class="ratio-cell"><div class="k">스쿼트 CV</div><div class="v" style="color:${cvColor(cv.sq.label)}">${cv.sq.cv.toFixed(1)}% (${cv.sq.label})</div></div>
+      <div class="ratio-cell"><div class="k">레그프레스 평균</div><div class="v">${cv.lp.mean.toFixed(1)}kg</div></div>
+      <div class="ratio-cell"><div class="k">레그프레스 표준편차</div><div class="v">±${cv.lp.std.toFixed(1)}kg</div></div>
+      <div class="ratio-cell"><div class="k">레그프레스 CV</div><div class="v" style="color:${cvColor(cv.lp.label)}">${cv.lp.cv.toFixed(1)}% (${cv.lp.label})</div></div>
+    `;
+    textEl.innerHTML = `최근 <b>${cv.n}회</b> 기록 기준, 스쿼트 CV는 <b style="color:${cvColor(cv.sq.label)}">${cv.sq.cv.toFixed(1)}% (${cv.sq.label})</b>, 레그프레스 CV는 <b style="color:${cvColor(cv.lp.label)}">${cv.lp.cv.toFixed(1)}% (${cv.lp.label})</b>입니다.
+      스쿼트는 매 반복 코어·척추기립근이 자세를 실시간으로 잡아야 하므로 협응이 불안정하면 회차별 기록이 들쭉날쭉해지고, 레그프레스는 궤적이 고정된 만큼 협응력보다 특정 근육의 순수 근력·근지구력이 기록을 좌우합니다.
+      CV가 8% 이상인 종목은 아래 [운동 처방]에 해당 종목의 안정성·근지구력 보강 항목이 자동으로 추가됩니다.`;
+  }
+
   document.getElementById('analyzeDeviationBtn').addEventListener('click', async ()=>{
     const bodyStatus = document.getElementById('bodyStatus');
     const height = Number(document.getElementById('inHeight').value);
@@ -1880,6 +1962,15 @@
     const sqLevel = strengthLevel('squat', rec.gender, sqBW);
     const lpLevel = strengthLevel('legpress', rec.gender, lpBW);
 
+    // 개인 기록 표준편차·CV 분석 (동일 인물의 my-records 전체 기록 사용, 최소 3회 필요)
+    let curNameForCV = _logName || rec.name;
+    if(!curNameForCV){ try{ const p = JSON.parse(await sGet('profile:current', false) || 'null'); if(p) curNameForCV = p.name; }catch(e){} }
+    let myAllRecords = [];
+    try{ myAllRecords = JSON.parse(await sGet('my-records', false) || '[]'); }catch(e){}
+    if(curNameForCV) myAllRecords = myAllRecords.filter(r=>r.name===curNameForCV);
+    const cv = personalVariability(myAllRecords);
+    renderCVAnalysis(cv, myAllRecords.length);
+
     let jointNote = '';
     const lpA = JSON.parse(await sGet('analysis:legpress', false) || 'null');
     const sqA = JSON.parse(await sGet('analysis:squat', false) || 'null');
@@ -1896,7 +1987,7 @@
       ※ 본 시스템은 하체(스쿼트·레그프레스) 기록만 다루므로 상체 근력은 별도 측정이 필요합니다.
       ${jointNote}`;
 
-    renderPrescription(rec, {sqA, lpA, ratio, sqBW, lpBW, sqLevel, lpLevel});
+    renderPrescription(rec, {sqA, lpA, ratio, sqBW, lpBW, sqLevel, lpLevel, cv});
     driveLog('편차 분석·운동처방', {신장: height+'cm', 체중: weight+'kg', BMI: bmi,
       '레그프레스÷스쿼트': ratio.toFixed(2)+'×', '스쿼트÷체중': sqBW.toFixed(2)+'× ('+sqLevel+')', '레그프레스÷체중': lpBW.toFixed(2)+'× ('+lpLevel+')',
       배율소견: verdict+' '+reason});
@@ -1904,39 +1995,72 @@
   });
 
   /* ---------- 운동 처방 (확장) ---------- */
+  // tag: 'top'(자세 교정 최우선) · 'aux'(보완) · 'common'(공통 워밍업/회복)
   const RX_LIBRARY = {
-    valgus: {ic:'🦵',title:'무릎 정렬 교정', body:'미니 밴드 스쿼트, 클램쉘, 사이드 스텝으로 고관절 외회전근(중둔근)을 강화해 무릎이 안쪽으로 모이는 것을 방지하세요. 스쿼트/레그프레스 모두 "무릎은 발끝 방향"을 큐잉하며 가벼운 중량으로 반복 연습합니다. 주 2~3회, 밴드 운동 각 15회×3세트.'},
-    depth: {ic:'📐',title:'가동범위 확보', body:'맨몸 고블릿 스쿼트로 목표 깊이까지 내려가는 감각을 익히고, 발목(벽 무릎 터치)·고관절(90/90 스트레칭) 가동성 운동을 병행하세요. 박스 스쿼트로 정확한 하강 깊이를 반복 학습하면 효과적입니다. 훈련 전 5~10분 가동성 루틴을 습관화하세요.'},
-    asym: {ic:'⚖️',title:'좌우 불균형 보완', body:'불가리안 스플릿 스쿼트, 싱글레그 레그프레스, 싱글레그 데드리프트 등 편측 운동으로 약한 쪽을 우선 강화하세요. 편측 운동은 항상 약한 쪽부터 시작하고, 강한 쪽은 약한 쪽이 수행한 만큼만 반복해 좌우 차이를 좁힙니다. 주 2회, 각 10~12회×3세트.'},
-    lockout: {ic:'⚠️',title:'락아웃 주의', body:'레그프레스 상승 시 무릎을 완전히 펴지 말고 약 5~10° 굽힌 상태에서 멈추는 큐잉을 반복 연습하세요. 무릎을 끝까지 펴면 관절에 체중이 그대로 실려 부상 위험이 커집니다. 가벼운 중량으로 "천천히 밀고, 끝에서 살짝 남기기"를 10회×3세트 연습합니다.'},
-    speed: {ic:'⏱️',title:'템포 컨트롤 훈련', body:'하강이 빠르거나 반동을 쓰는 패턴이 감지되었습니다. 템포 스쿼트(3초 하강-1초 정지-1초 상승, 3-1-1 템포)로 신장성 구간을 통제하는 훈련을 하세요. 중량은 평소의 60~70%로 낮추고, 정확한 속도 유지에 집중합니다. 주 1~2회, 6~8회×3세트.'},
-    general_low: {ic:'💪',title:'기초 근력 강화', body:'맨몸 스쿼트, 힙 브릿지, 밴드 레그프레스 대체 동작으로 기초 체력을 쌓은 뒤 점진적으로 중량을 늘려가세요(점진적 과부하 원리). 처음 4주는 자세 습득에 집중하고, 이후 매주 2.5~5kg씩 소폭 증량합니다.'},
-    ratio_low: {ic:'🔵',title:'레그프레스 병행', body:'스쿼트 대비 레그프레스 기록이 낮은 편입니다. 머신 기반의 안전한 고중량 자극을 위해 레그프레스 세트를 보강해보세요. 스쿼트 후 보조 운동으로 레그프레스 8~12회×3세트를 배치하면 하체 전체 볼륨을 안전하게 늘릴 수 있습니다.'},
-    ratio_high: {ic:'🟠',title:'코어·스쿼트 숙련도 보강', body:'레그프레스 대비 스쿼트 기록이 낮은 편입니다. 플랭크·데드버그·팔로프 프레스 등 코어 안정화 운동(주 3회, 각 30초~12회×3세트)과 맨몸/저중량 스쿼트 반복으로 자유중량 숙련도를 높여보세요. 코어가 안정되면 같은 하체 근력으로도 스쿼트 중량이 올라갑니다.'},
-    warmup: {ic:'🔥',title:'준비운동·정리운동 (공통)', body:'본 운동 전: 가벼운 유산소 5분 → 다이나믹 스트레칭(레그 스윙, 힙 서클) → 본 종목을 빈 바/가벼운 중량으로 10회×2세트 워밍업. 본 운동 후: 정적 스트레칭(대퇴사두근·햄스트링·둔근 각 20~30초)으로 마무리해 회복을 돕습니다.'},
-    recovery: {ic:'😴',title:'회복·빈도 관리 (공통)', body:'같은 부위의 고강도 훈련 사이에는 48~72시간의 회복 시간을 두세요. 하체 최대 근력 훈련은 주 2~3회가 적정하며, 수면 7시간 이상과 충분한 단백질 섭취(체중 1kg당 약 1.6g)가 근력 향상의 기본 조건입니다.'}
+    valgus: {ic:'🦵', title:'무릎 정렬 교정 (Knee Valgus)', tag:'top', freq:'주 3회 (본 운동 前 활성화)', sets:'각 동작 15~20회 × 3세트',
+      body:'중둔근·고관절 외회전근이 약해 하강 시 무릎이 안쪽으로 무너지는 패턴입니다. 처방: ① 미니밴드 옆걸음(사이드 스텝) 15보×3, ② 클램쉘 15회×3(좌우), ③ 밴드 스쿼트(무릎에 밴드를 걸고 바깥으로 미는 힘 유지) 12회×3. 본 운동 시에는 매 세트 시작 전 "무릎은 두 번째 발가락 방향"을 소리 내어 큐잉하고, 거울이나 영상으로 셀프 체크하세요. 중량은 무릎이 무너지지 않는 범위 내에서만 증량합니다.'},
+    depth: {ic:'📐', title:'가동범위(하강 깊이) 확보', tag:'top', freq:'주 3~4회 (본 운동 前 5~10분)', sets:'맨몸 고블릿 스쿼트 10회×2, 모빌리티 드릴 각 30초×2',
+      body:'목표 깊이(스쿼트: 대퇴 평행 이하 / 레그프레스: 무릎 약 105° 부근)까지 도달하지 못하는 상태입니다. 처방: ① 벽 무릎터치(발목 배측굴곡) 10회×2 — 발목 가동성 확보, ② 90/90 힙 스트레칭 좌우 각 30초×2 — 고관절 가동성, ③ 박스/의자 스쿼트로 목표 깊이에 살짝 앉았다 올라오는 동작 10회×3 — 깊이 감각 학습. 본 세트에서는 평소 중량의 60~70%로 낮춰 "천천히 앉고 목표 지점에서 1초 정지" 큐잉을 반복 연습한 뒤, 깊이가 안정되면 점진적으로 중량을 복귀하세요.'},
+    asym: {ic:'⚖️', title:'좌우 불균형 보완', tag:'aux', freq:'주 2회', sets:'편측 동작 8~12회 × 3세트 (약한 쪽 우선)',
+      body:'좌우 무릎 각도 차이가 감지되었습니다. 처방: ① 불가리안 스플릿 스쿼트, ② 싱글레그 레그프레스, ③ 싱글레그 힙 힌지(싱글레그 데드리프트) 중 2가지를 선택해 편측 운동으로 배치하세요. 항상 약한 쪽부터 시작하고, 강한 쪽은 약한 쪽이 수행한 반복 수만큼만 진행해 좌우 근력차를 좁힙니다. 4~6주 후 재측정으로 개선 여부를 확인하세요.'},
+    lockout: {ic:'⚠️', title:'락아웃(무릎 완전 폄) 주의', tag:'aux', freq:'본 운동 워밍업 세트마다 적용', sets:'경량 10회 × 3세트',
+      body:'상승 구간에서 무릎을 끝까지 펴 체중이 관절에 그대로 실리는 패턴입니다. 처방: 레그프레스 상승 시 무릎을 약 5~10° 굽힌 상태에서 의도적으로 멈추는 "숏 락아웃" 큐잉을 가벼운 중량으로 10회×3세트 연습한 뒤 본 세트에 적용하세요. 완전히 펴는 순간 무릎에서 "딸깍"하는 느낌이나 불편감이 있다면 즉시 중량을 낮추세요.'},
+    speed: {ic:'⏱️', title:'템포 컨트롤(하강 속도) 훈련', tag:'aux', freq:'주 1~2회 (템포 전용 세트)', sets:'6~8회 × 3세트, 평소 중량의 60~70%',
+      body:'하강이 빠르거나 반동을 이용하는 패턴이 감지되었습니다. 처방: 3-1-1 템포(3초 하강 - 1초 정지 - 1초 상승)로 신장성(에센트릭) 구간을 통제하는 훈련을 하세요. 메트로놈 앱이나 타이머로 박자를 맞추면 습관화에 도움이 됩니다. 템포가 안정되면 평소 중량·속도로 복귀합니다.'},
+    general_low: {ic:'💪', title:'기초 근력 강화 (입문 단계)', tag:'aux', freq:'주 2~3회', sets:'8~12회 × 3세트, 40~55분/회',
+      body:'맨몸 스쿼트 → 힙 브릿지 → 밴드 레그프레스 대체 동작(밴드 레그 프레스, 월 싯) 순으로 4주간 자세·가동범위 습득에 집중하세요. 5주차부터 바벨/머신 중량을 도입하며 주당 2.5~5kg씩 소폭·점진적으로 증량합니다(점진적 과부하). 매 세션 전후 워밍업·쿨다운을 반드시 포함하세요.'},
+    ratio_low: {ic:'🔵', title:'레그프레스 병행 보강', tag:'aux', freq:'스쿼트 세션 뒤 보조운동으로 주 2회', sets:'8~12회 × 3세트',
+      body:'스쿼트 대비 레그프레스 기록이 낮은 편입니다. 스쿼트 본 세트 종료 후 보조 운동으로 레그프레스 8~12회×3세트를 배치해 머신 기반의 안전한 고중량 자극으로 하체 볼륨을 안전하게 늘려보세요. 레그프레스는 코어 부담이 적어 스쿼트로 지친 상태에서도 비교적 안전하게 추가 자극을 줄 수 있습니다.'},
+    ratio_high: {ic:'🟠', title:'코어 안정화 · 스쿼트 숙련도 보강', tag:'aux', freq:'주 3회', sets:'코어 30초~12회×3세트 + 저중량 스쿼트 10회×3세트',
+      body:'레그프레스 대비 스쿼트 기록이 낮은 편입니다. 처방: ① 플랭크 40~60초×3, ② 데드버그 12회×3(좌우 교대), ③ 팔로프 프레스 12회×3(좌우) 로 코어 안정화 루틴을 구성하고, 이어서 맨몸/저중량 스쿼트 10회×3세트로 자유중량 숙련도를 높이세요. 코어가 안정되면 같은 하체 근력으로도 스쿼트 가능 중량이 늘어납니다.'},
+    warmup: {ic:'🔥', title:'준비운동 (공통 · 본 운동 전)', tag:'common', freq:'매 세션 시작 시', sets:'총 8~10분',
+      body:'① 가벼운 유산소(자전거·걷기) 5분 → ② 다이나믹 스트레칭(레그 스윙 10회×2, 힙 서클 10회×2) → ③ 본 종목을 빈 바 또는 매우 가벼운 중량으로 10회×2세트 수행하며 목표 가동범위·자세를 리허설합니다.'},
+    cooldown: {ic:'🧘',title:'정리운동 (공통 · 본 운동 후)', tag:'common', freq:'매 세션 종료 시', sets:'부위별 20~30초 × 2세트',
+      body:'대퇴사두근, 햄스트링, 둔근, 종아리 순으로 정적 스트레칭을 각 20~30초×2세트 진행해 회복을 돕고 다음 세션의 가동성을 유지하세요.'},
+    recovery: {ic:'😴', title:'회복·빈도 관리 (공통)', tag:'common', freq:'주 단위 관리', sets:'-',
+      body:'같은 부위의 고강도(80%1RM 이상) 훈련 사이에는 48~72시간의 회복 시간을 확보하세요. 하체 최대 근력 훈련은 주 2~3회가 적정하며, 수면 7시간 이상과 체중 1kg당 약 1.6g의 단백질 섭취가 근력 향상의 기본 조건입니다. 특정 관절 통증이 3일 이상 지속되면 훈련을 중단하고 전문가(의사·물리치료사)와 상담하세요.'},
+    sq_stdev_high: {ic:'🧱', title:'코어·척추 안정성 보강 (스쿼트 기록 변동성 높음)', tag:'aux', freq:'주 2~3회 (본 운동 前 또는 별도 세션)', sets:'아래 4종목 순서대로',
+      body:'개인 기록 CV 분석 결과 스쿼트 변동계수(CV)가 8% 이상으로 높게 나타났습니다. 스쿼트는 매 반복마다 코어와 척추기립근이 실시간으로 자세를 잡아야 하는 종목이라, 협응이 불안정하면 회차별 1RM 기록이 들쭉날쭉해집니다. 처방: ① 플랭크 40~60초 × 3세트, ② 버드독 좌우 각 10회 × 3세트, ③ 팔로프 프레스 좌우 각 12회 × 3세트, ④ 바벨 굿모닝(경량) 10회 × 3세트. 4~6주 후 재측정해 CV가 낮아지는지 확인하세요.'},
+    lp_stdev_high: {ic:'🦿', title:'하체 고립·근지구력 보강 (레그프레스 기록 변동성 높음)', tag:'aux', freq:'주 2~3회', sets:'아래 4종목 순서대로',
+      body:'개인 기록 CV 분석 결과 레그프레스 변동계수(CV)가 8% 이상으로 높게 나타났습니다. 레그프레스는 궤적이 고정된 만큼 협응력보다 특정 근육의 순수 근력·근지구력이 기록을 좌우하므로, 편차가 크다면 근지구력·근육별 고립 강화를 우선합니다. 처방: ① 레그 익스텐션 12~15회 × 3세트, ② 레그 컬 12~15회 × 3세트, ③ 불가리안 스플릿 스쿼트 다리당 10회 × 3세트, ④ 런지 다리당 12보 × 3세트. 4~6주 후 재측정해 회차 간 편차가 줄었는지 확인하세요.'},
+    unilateral_ratio_low: {ic:'🔄', title:'편측성 보강 운동 (레그프레스÷스쿼트 배율 낮음)', tag:'aux', freq:'주 2회 (약한 쪽 우선 수행)', sets:'다리당 10~12회 × 3세트',
+      body:'레그프레스÷스쿼트 배율이 1.5배 미만으로 참고범위를 벗어났습니다. 좌우 또는 종목 간 불균형 가능성을 고려해 편측(한쪽씩) 운동을 우선 배치하세요. 처방: 불가리안 스플릿 스쿼트, 싱글레그 레그프레스, 워킹 런지 중 2가지를 선택하고, 반드시 약한 쪽(기록이 낮거나 불편감이 있는 쪽)부터 먼저 수행한 뒤 반대쪽은 약한 쪽이 수행한 반복 수만큼만 진행합니다.'},
+    unilateral_ratio_high: {ic:'🔃', title:'편측성 보강 운동 (레그프레스÷스쿼트 배율 높음)', tag:'aux', freq:'주 2회 (약한 쪽 우선 수행)', sets:'다리당 10~12회 × 3세트',
+      body:'레그프레스÷스쿼트 배율이 2.0배를 초과해 참고범위를 벗어났습니다. 하체 근력 자체는 충분하지만 자유중량 숙련도·좌우 균형이 상대적으로 부족할 수 있으니 편측 운동으로 보완하세요. 처방: 불가리안 스플릿 스쿼트, 싱글레그 데드리프트, 워킹 런지 중 2가지를 선택하고, 약한 쪽(더 힘들거나 불안정한 쪽)을 먼저 수행한 뒤 반대쪽은 동일 반복 수로 맞춰 진행해 좌우·종목 간 불균형을 좁혀 나가세요.'}
   };
 
-  // 수준별 세트·강도 처방 (%1RM 기준)
+  // 수준별 세트·강도 처방 (%1RM 기준) — 각 행: [목적, %1RM, 세트×반복, 목표 RPE(RIR), 휴식, 빈도, 비고]
+  // %1RM-반복수 대응은 NSCA(Baechle & Earle, Essentials of Strength Training and Conditioning)의
+  // 1RM 추정 환산표를 근거로 하며, RPE/RIR 척도는 Zourdos et al.(2016)의 저항운동 자각인지도 척도를 사용합니다.
   const LEVEL_PLAN = {
-    '입문':      [['근력 기초', '50~60% 1RM', '10~12회 × 3세트', '90초', '주 2회', '자세 습득 최우선, 증량은 천천히']],
-    '초급~중급': [['근비대', '65~75% 1RM', '8~10회 × 3~4세트', '90초~2분', '주 2~3회', '볼륨 중심으로 근육량 확보'],
-                  ['근력', '80~85% 1RM', '4~6회 × 3세트', '2~3분', '주 1회', '주 1회 고중량 노출로 신경계 적응']],
-    '중급~상급': [['근력', '80~90% 1RM', '3~5회 × 4~5세트', '3분', '주 2회', '고중량 저반복 중심'],
-                  ['근비대 유지', '70~75% 1RM', '8~10회 × 3세트', '90초', '주 1회', '보조일에 볼륨 유지']],
-    '상급 이상': [['최대 근력', '85~95% 1RM', '1~3회 × 4~6세트', '3~5분', '주 1~2회', '주기화(피리어다이제이션) 적용 권장'],
-                  ['보조·약점 보완', '65~75% 1RM', '8~12회 × 3세트', '90초', '주 1~2회', '편측·코어 등 약점 부위 집중']]
+    '입문':      [['근력 기초', '50~60% 1RM', '10~12회 × 3세트', 'RPE 6~7 (RIR 3~4)', '90초', '주 2회', '자세 습득 최우선, 증량은 천천히']],
+    '초급~중급': [['근비대', '65~75% 1RM', '8~10회 × 3~4세트', 'RPE 7~8 (RIR 2~3)', '90초~2분', '주 2~3회', '볼륨 중심으로 근육량 확보'],
+                  ['근력', '80~85% 1RM', '4~6회 × 3세트', 'RPE 8 (RIR 2)', '2~3분', '주 1회', '주 1회 고중량 노출로 신경계 적응']],
+    '중급~상급': [['근력', '80~90% 1RM', '3~5회 × 4~5세트', 'RPE 8~9 (RIR 1~2)', '3분', '주 2회', '고중량 저반복 중심'],
+                  ['근비대 유지', '70~75% 1RM', '8~10회 × 3세트', 'RPE 7 (RIR 3)', '90초', '주 1회', '보조일에 볼륨 유지']],
+    '상급 이상': [['최대 근력', '85~95% 1RM', '1~3회 × 4~6세트', 'RPE 9~9.5 (RIR 0.5~1)', '3~5분', '주 1~2회', '주기화(피리어다이제이션) 적용 권장'],
+                  ['보조·약점 보완', '65~75% 1RM', '8~12회 × 3세트', 'RPE 7 (RIR 3)', '90초', '주 1~2회', '편측·코어 등 약점 부위 집중']]
   };
   function renderLevelPlan(sqLevel, lpLevel){
-    // 두 종목 중 더 낮은 수준을 기준으로 처방
-    const order = ['입문','초급~중급','중급~상급','상급 이상'];
-    const level = order[Math.min(order.indexOf(sqLevel), order.indexOf(lpLevel))];
-    const rows = LEVEL_PLAN[level].map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('');
-    return `<h3 class="sub-heading">수준별 트레이닝 처방 — 현재 수준: <b style="color:var(--accent);">${level}</b></h3>
+    // 스쿼트·레그프레스는 각각의 1RM 수준(sqLevel/lpLevel)에 따라 별도로 처방합니다.
+    // 두 종목의 수준이 같으면 표를 합쳐서 보여주고, 다르면 종목별로 구분해 보여줍니다.
+    const sameLevel = sqLevel === lpLevel;
+    const groups = sameLevel
+      ? [{label:'스쿼트 · 레그프레스 (공통)', level:sqLevel}]
+      : [{label:'스쿼트', level:sqLevel}, {label:'레그프레스', level:lpLevel}];
+    const rows = groups.map(g=>
+      LEVEL_PLAN[g.level].map(r=>`<tr><td class="g-name">${g.label}</td><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td></tr>`).join('')
+    ).join('');
+    const levelSummary = sameLevel
+      ? `<b style="color:var(--accent);">${sqLevel}</b>`
+      : `스쿼트 <b style="color:var(--accent);">${sqLevel}</b> · 레그프레스 <b style="color:var(--accent);">${lpLevel}</b>`;
+    return `<h3 class="sub-heading">종목별 수준 트레이닝 처방 — 현재 수준: ${levelSummary}</h3>
+      <div style="overflow-x:auto;">
       <table class="plan-table">
-        <thead><tr><th>목적</th><th>강도</th><th>세트×반복</th><th>휴식</th><th>빈도</th><th>비고</th></tr></thead>
+        <thead><tr><th>종목</th><th>목적</th><th>강도</th><th>세트×반복</th><th>목표 RPE(RIR)</th><th>휴식</th><th>빈도</th><th>비고</th></tr></thead>
         <tbody>${rows}</tbody>
-      </table>`;
+      </table>
+      </div>`;
   }
   function renderWeekPlan(sqLevel, lpLevel){
     const order = ['입문','초급~중급','중급~상급','상급 이상'];
@@ -1966,28 +2090,139 @@
       <p class="hint" style="margin-top:8px;">* 예시 배치이며, 개인 일정·회복 상태에 맞게 요일을 조정하세요. 통증이 있으면 즉시 중단하고 전문가와 상담하세요.</p>`;
   }
 
+  // 4주 주기화 플랜 — 수준별 강도/볼륨 변화 (선형 주기화 모델; Fleck & Kraemer의
+  // Periodization Model을 단순화해 4주 마이크로사이클로 구성. 각 행: [주차, 목표, 강도, 세트×반복, 목표RPE, 포인트]
+  const PERIODIZATION = {
+    '입문':      [['1주','기술 습득','자세 학습 · 50% 1RM','10~12회 × 3세트','RPE 5~6','자세·가동범위에만 집중, 영상으로 셀프 체크'],
+                  ['2주','기술 습득','52~55% 1RM','10~12회 × 3세트','RPE 6','전주 대비 통증·불편감 없으면 소폭 증량'],
+                  ['3주','적응','55~60% 1RM','10회 × 3세트','RPE 6~7','반복당 템포(3-1-1) 유지 확인'],
+                  ['4주','점검','58~62% 1RM','8~10회 × 3세트','RPE 7','자세 재점검 · 다음 사이클 목표 설정']],
+    '초급~중급': [['1주','볼륨','65~70% 1RM','8~10회 × 4세트','RPE 7','근비대 중심, 세트 간 90초 휴식'],
+                  ['2주','볼륨','70~75% 1RM','8~10회 × 4세트','RPE 7~8','전주 대비 2.5~5kg 증량 시도'],
+                  ['3주','강도 전환','78~85% 1RM','4~6회 × 3세트','RPE 8~9','신경계 적응, 휴식 2~3분으로 연장'],
+                  ['4주','디로드/테스트','60~65% 1RM 또는 1RM 테스트','6회×2세트 또는 테스트 1회','RPE 6 / 테스트 10','피로 해소 후 3주차 이상 중량 재도전']],
+    '중급~상급': [['1주','축적','80~85% 1RM','3~5회 × 4세트','RPE 8','고중량 저반복, 휴식 3분'],
+                  ['2주','축적','83~88% 1RM','3~5회 × 4~5세트','RPE 8~9','보조 운동 볼륨 유지'],
+                  ['3주','피크','88~92% 1RM','2~3회 × 3세트','RPE 9','실패 지점 도달 전 세트 종료'],
+                  ['4주','디로드','65~70% 1RM','6~8회 × 2세트','RPE 6','완전 회복 목적, 다음 사이클 대비']],
+    '상급 이상': [['1주','축적','82~88% 1RM','2~4회 × 4~5세트','RPE 8','보조·약점 부위 볼륨 병행'],
+                  ['2주','축적','85~90% 1RM','2~3회 × 4~5세트','RPE 8~9','컨디션에 따라 세트당 RPE 8~9 유지'],
+                  ['3주','피크','90~95% 1RM','1~2회 × 3~4세트','RPE 9~9.5','신중한 웜업, 스팟터 권장'],
+                  ['4주','테스트/디로드','95~100% 1RM 테스트 또는 60% 디로드','1RM 시도 또는 8회×2세트','RPE 10 / RPE 6','기록 갱신 시도 또는 완전 회복 선택']]
+  };
+  function renderPeriodization(sqLevel, lpLevel){
+    const sameLevel = sqLevel === lpLevel;
+    const groups = sameLevel
+      ? [{label:'스쿼트 · 레그프레스 (공통)', level:sqLevel}]
+      : [{label:'스쿼트', level:sqLevel}, {label:'레그프레스', level:lpLevel}];
+    const rows = groups.map(g=>
+      PERIODIZATION[g.level].map(r=>`<tr><td class="g-name">${g.label}</td><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td></tr>`).join('')
+    ).join('');
+    const levelSummary = sameLevel
+      ? `<b style="color:var(--accent);">${sqLevel}</b>`
+      : `스쿼트 <b style="color:var(--accent);">${sqLevel}</b> · 레그프레스 <b style="color:var(--accent);">${lpLevel}</b>`;
+    return `<h3 class="sub-heading" style="margin-top:16px;">종목별 4주 주기화(피리어다이제이션) 플랜 — 기준: ${levelSummary}</h3>
+      <div style="overflow-x:auto;">
+      <table class="plan-table">
+        <thead><tr><th>종목</th><th>주차</th><th>목표</th><th>강도</th><th>세트×반복</th><th>목표RPE</th><th>포인트</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      </div>
+      <p class="hint" style="margin-top:8px;">* %1RM은 탭3에 저장한 해당 종목의 현재 1RM 기준입니다. 4주 뒤 재측정하여 다음 사이클 %1RM을 갱신하세요. RPE(자각적 운동강도)·RIR(남은 반복 수)은 실제 체감 난이도에 맞춰 중량을 미세 조정하는 보조 지표입니다.</p>`;
+  }
+
+  // %1RM–반복수–RPE 대응 참고표 (NSCA 1RM 환산표 + RPE/RIR 척도 기반, 근사값)
+  const ONE_RM_REF = [
+    ['100%','1회','RPE 10 (RIR 0)'],
+    ['95%','2회','RPE 9.5 (RIR 0.5)'],
+    ['90%','4회','RPE 9 (RIR 1)'],
+    ['85%','6회','RPE 8 (RIR 2)'],
+    ['80%','8회','RPE 7.5 (RIR 2~3)'],
+    ['75%','10회','RPE 7 (RIR 3)'],
+    ['70%','12회','RPE 6.5 (RIR 3~4)'],
+    ['65%','15회','RPE 6 (RIR 4)'],
+    ['60%','17~20회','RPE 5~6 (RIR 4~5)']
+  ];
+  function renderEvidenceBox(){
+    const rows = ONE_RM_REF.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    return `<div class="card" style="margin-top:14px;padding:18px 20px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);">
+      <h3 class="sub-heading" style="margin-top:0;">📚 처방 근거 및 기준</h3>
+      <p class="hint" style="margin:0 0 10px;">본 처방은 임의의 수치가 아니라 아래의 저항운동 처방 원리를 근거로 산출되었습니다.</p>
+      <ul class="reason-list" style="margin:0 0 14px;">
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">%1RM–반복수 관계</b> — NSCA(Baechle & Earle, <i>Essentials of Strength Training and Conditioning</i>)의 1RM 추정 환산표를 근거로 목표 반복수를 산정했습니다 (아래 참고표).</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">RPE·RIR 척도</b> — Zourdos 등(2016)이 제안한 저항운동용 자각적 운동강도(RPE)-잔여반복수(RIR) 척도를 병기해, 당일 컨디션에 따라 중량을 미세 조정할 수 있도록 했습니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">세트 간 휴식시간</b> — ACSM Position Stand(저항운동 진행 모델, 2009)의 권고에 따라 근력 위주 세트는 2~5분, 근비대 위주 세트는 30초~2분으로 구분했습니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">점진적 과부하</b> — Kraemer & Ratamess(2004)의 저항운동 처방 권고에 근거해 주당 2.5~5kg 내외의 소폭·점진적 증량을 제안합니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">4주 주기화 구조</b> — Fleck & Kraemer의 선형 주기화(Linear Periodization) 모델을 단순화해, 축적(볼륨)→강도 전환→피크→디로드/테스트의 4주 마이크로사이클로 구성했습니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">회복·휴식 간격</b> — 골격근 미세손상 후 회복에 필요한 것으로 보고되는 48~72시간을 근거로 동일 부위 고강도 훈련의 최소 간격을 설정했습니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">단백질 섭취 권고</b> — ISSN(국제스포츠영양학회) Position Stand(Jäger 등, 2017)의 근력운동 참여자 대상 권고치(체중 1kg당 1.4~2.0g 범위)를 참고해 1.6g/kg을 기준값으로 제시했습니다.</li>
+        <li style="color:var(--text-dim);"><b style="color:var(--text);">교정 운동 선정 근거</b> — 무릎 외반(valgus)은 중둔근·고관절 외회전근의 근력 약화 및 동원 지연과 관련이 있다고 보고되어, 해당 근육을 표적으로 하는 밴드 저항 운동을 우선 배치했습니다. 하강 깊이 부족은 발목 배측굴곡·고관절 가동성 제한과 연관되는 경우가 많아, 관절 가동성 운동을 함께 배치했습니다.</li>
+      </ul>
+      <h3 class="sub-heading">%1RM–반복수–RPE 참고표 (NSCA 환산표 기반, 근사값)</h3>
+      <table class="plan-table">
+        <thead><tr><th>%1RM</th><th>최대 수행 가능 반복수</th><th>대응 RPE(RIR)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="hint" style="margin-top:8px;">※ 개인의 근섬유 구성·훈련 경력에 따라 실제 수행 가능 반복수는 표와 다를 수 있으므로, 표는 절대 기준이 아닌 처방 설계의 출발점으로 활용합니다. 본 처방은 일반적인 트레이닝 원리를 적용한 참고 자료이며, 기저질환·부상 이력이 있는 경우 운동처방 전문가(운동생리학자, 물리치료사, 스포츠의학 전문의)와 상담 후 적용을 권장합니다.</p>
+    </div>`;
+  }
+
   function renderPrescription(rec, ctx){
     const items = [];
     const flagText = (a)=> a ? a.reasons.join(' ') : '';
     const allReasons = flagText(ctx.sqA) + ' ' + flagText(ctx.lpA);
-    if(allReasons.includes('Valgus') || allReasons.includes('안쪽')) items.push(RX_LIBRARY.valgus);
-    if(allReasons.includes('가동범위') || allReasons.includes('깊이')) items.push(RX_LIBRARY.depth);
+    const correctiveFound = [];
+    if(allReasons.includes('Valgus') || allReasons.includes('안쪽')){ items.push(RX_LIBRARY.valgus); correctiveFound.push('무릎 정렬(Valgus)'); }
+    if(allReasons.includes('가동범위') || allReasons.includes('깊이')){ items.push(RX_LIBRARY.depth); correctiveFound.push('하강 깊이 부족'); }
     if(allReasons.includes('비대칭')) items.push(RX_LIBRARY.asym);
     if(allReasons.includes('락아웃')) items.push(RX_LIBRARY.lockout);
     if(allReasons.includes('속도') || allReasons.includes('반동')) items.push(RX_LIBRARY.speed);
     if(ctx.sqLevel === '입문' || ctx.lpLevel === '입문') items.push(RX_LIBRARY.general_low);
-    if(ctx.ratio < 1.5) items.push(RX_LIBRARY.ratio_low);
-    if(ctx.ratio > 2.0) items.push(RX_LIBRARY.ratio_high);
-    if(!items.length) items.push({ic:'✅',title:'현재 상태 유지', body:'현재 기록과 자세 모두 양호합니다. 점진적 과부하 원리에 따라 중량을 조금씩 늘리며 동일한 자세 기준을 유지하세요.'});
+    if(ctx.ratio < 1.5){ items.push(RX_LIBRARY.ratio_low); items.push(RX_LIBRARY.unilateral_ratio_low); }
+    if(ctx.ratio > 2.0){ items.push(RX_LIBRARY.ratio_high); items.push(RX_LIBRARY.unilateral_ratio_high); }
+    // 개인 기록 변동계수(CV) 기반 처방 — CV 8% 이상(높음)인 종목에만 추가
+    const cvFound = [];
+    if(ctx.cv){
+      if(ctx.cv.sq.label === '높음'){ items.push(RX_LIBRARY.sq_stdev_high); cvFound.push('스쿼트 기록 변동성'); }
+      if(ctx.cv.lp.label === '높음'){ items.push(RX_LIBRARY.lp_stdev_high); cvFound.push('레그프레스 기록 변동성'); }
+    }
+    if(!items.length) items.push({ic:'✅', title:'현재 상태 유지', tag:'aux', freq:'현재 루틴 유지', sets:'점진적 과부하 원리 적용',
+      body:'현재 기록과 자세 모두 양호합니다. 2~4주마다 2.5~5kg씩 소폭 증량하며 동일한 자세 기준(하강 깊이·무릎 정렬)을 계속 유지하세요.'});
     // 공통 처방은 항상 포함
-    items.push(RX_LIBRARY.warmup, RX_LIBRARY.recovery);
+    items.push(RX_LIBRARY.warmup, RX_LIBRARY.cooldown, RX_LIBRARY.recovery);
+
+    const noteEl = document.getElementById('rxPriorityNote');
+    if(correctiveFound.length){
+      noteEl.innerHTML = `<div class="rx-priority-note"><span class="pin">📌</span><div><b>자세분석에서 발견된 문제(${correctiveFound.join(', ')})</b>를 우선 교정하는 항목을 목록 맨 위에 배치했습니다. 해당 교정 운동을 먼저 3~4주 수행해 자세를 안정시킨 뒤, 본 리프트 중량을 올리는 순서를 권장합니다.</div></div>`;
+    } else {
+      noteEl.innerHTML = '';
+    }
+    if(cvFound.length){
+      noteEl.innerHTML += `<div class="rx-priority-note"><span class="pin">📊</span><div><b>${cvFound.join(', ')}이(가) 높음(CV 8% 이상)</b>으로 나타나, 해당 종목의 안정성·근지구력 보강 항목을 처방에 추가했습니다. 4~6주 뒤 기록을 다시 저장해 CV가 낮아지는지 확인하세요.</div></div>`;
+    }
 
     document.getElementById('rxCard').style.display = 'block';
     document.getElementById('rxLevelPlan').innerHTML = renderLevelPlan(ctx.sqLevel, ctx.lpLevel);
-    document.getElementById('rxList').innerHTML = items.map(r=>`
-      <div class="rx-card"><div class="ic">${r.ic}</div><div><h4>${r.title}</h4><p>${r.body}</p></div></div>
-    `).join('');
+    document.getElementById('rxPeriodization').innerHTML = renderPeriodization(ctx.sqLevel, ctx.lpLevel);
+    document.getElementById('rxList').innerHTML = items.map(r=>{
+      const badge = r.tag === 'top' ? '<span class="rx-badge top">교정 우선</span>'
+                  : r.tag === 'common' ? '<span class="rx-badge common">공통</span>'
+                  : '<span class="rx-badge aux">보완</span>';
+      const tags = (r.freq || r.sets) ? `<div class="rx-tags">
+          ${r.freq ? `<span class="rx-tag">빈도 <b>${escapeHtml(r.freq)}</b></span>` : ''}
+          ${r.sets ? `<span class="rx-tag">세트 <b>${escapeHtml(r.sets)}</b></span>` : ''}
+        </div>` : '';
+      return `<div class="rx-card${r.tag==='top' ? ' priority' : ''}">
+        <div class="ic">${r.ic}</div>
+        <div>
+          <div class="rx-head"><h4>${escapeHtml(r.title)}</h4>${badge}</div>
+          ${tags}
+          <p>${r.body}</p>
+        </div>
+      </div>`;
+    }).join('');
     document.getElementById('rxWeekPlan').innerHTML = renderWeekPlan(ctx.sqLevel, ctx.lpLevel);
+    document.getElementById('rxEvidence').innerHTML = renderEvidenceBox();
   }
 
   /* =================================================================
